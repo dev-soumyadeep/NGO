@@ -103,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         payload: { user, token },
       });
     } catch (error) {
+      console.log(error)
       console.log(error.response?.data?.message)
       // Extract the exact error message from the backend response
       const errorMessage =

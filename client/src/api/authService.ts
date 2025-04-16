@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/auth'; // Replace with your backend URL
+// const API_BASE_URL = 'http://localhost:5000/api/auth'; 
+const API_BASE_URL = `${process.env.BACKEND_API_URL}/api/auth`; 
+
 
 interface LoginResponse {
   token: string;

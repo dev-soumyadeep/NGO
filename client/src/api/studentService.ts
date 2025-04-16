@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Student } from '@/types';
 
-const API_BASE_URL = 'http://localhost:5000/api/student';
+// const API_BASE_URL = `http://localhost:5000/api/student`;
+const API_BASE_URL = `${process.env.BACKEND_API_URL}/api/student`;
 
 export const getStudentsBySchool = async (schoolId: string, token: string) => {
   const response = await axios.get(`${API_BASE_URL}/${schoolId}`, {
