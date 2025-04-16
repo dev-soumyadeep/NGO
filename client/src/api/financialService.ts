@@ -3,7 +3,7 @@ import { Transaction, SchoolFinancial } from '@/types';
 import { getSchool } from './schoolService';
 
 // const API_BASE_URL = `http://localhost:5000/api/transaction`; 
-const API_BASE_URL = `${process.env.BACKEND_API_URL}/api/transaction`; 
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/transaction`; 
 
 export const getIncomeCategories = () => [
   { id: 'donations', name: 'Donations', type: 'income' },

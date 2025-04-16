@@ -28,10 +28,10 @@ const Index: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const schoolsData = await getSchools();
-        const totalStudentsData = await getTotalStudents();
-        setSchools(schoolsData);
-        setTotalStudents(totalStudentsData);
+        // const schoolsData = await getSchools();
+        // const totalStudentsData = await getTotalStudents();
+        // setSchools(schoolsData);
+        // setTotalStudents(totalStudentsData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
