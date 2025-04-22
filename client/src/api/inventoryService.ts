@@ -1,7 +1,7 @@
 import { Category,Item } from '@/types'; // Import the Category type
 import axios from 'axios';
-const API_BASE_URL = `http://localhost:5000/api/inventory`; 
-// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
+// const API_BASE_URL = `http://localhost:5000/api/inventory`; 
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
 
 export const getCategoryList = async (authToken: string): Promise<Category[]> => {
     try {
