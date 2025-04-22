@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { School } from '@/types';
 
-// const API_BASE_URL = `http://localhost:5000/api/school`; 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/school`; 
+const API_BASE_URL = `http://localhost:5000/api/school`; 
+// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/school`; 
 
 export const getSchools = async (): Promise<School[]> => {
   try {

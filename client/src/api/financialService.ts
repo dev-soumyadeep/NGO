@@ -2,23 +2,25 @@ import axios from 'axios';
 import { Transaction, SchoolFinancial } from '@/types';
 import { getSchool } from './schoolService';
 
-// const API_BASE_URL = `http://localhost:5000/api/transaction`; 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/transaction`; 
+const API_BASE_URL = `http://localhost:5000/api/transaction`; 
+// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/transaction`; 
 
 export const getIncomeCategories = () => [
+  { id: 'tuition_fees', name: 'Tuition Fees', type: 'income' },
+  { id: 'admission_fees', name: 'Admission Fees', type: 'income' },
+  { id: 'session_fees', name: 'Session Fees', type: 'income' },
+  { id: 'caution_deposit', name: 'Caution Deposit', type: 'income' },
+  { id: 'stationary', name: 'Stationary', type: 'income' },
+  { id: 'transport', name: 'Transport', type: 'income' },
   { id: 'donations', name: 'Donations', type: 'income' },
-  { id: 'fundraising', name: 'Fundraising Events', type: 'income' },
-  { id: 'grants', name: 'Grants', type: 'income' },
   { id: 'other_income', name: 'Other Income', type: 'income' }
 ];
 
 export const getExpenseCategories = () => [
-  { id: 'salary', name: 'Staff Salaries', type: 'expense' },
-  { id: 'supplies', name: 'Educational Supplies', type: 'expense' },
-  { id: 'infrastructure', name: 'Infrastructure', type: 'expense' },
-  { id: 'utilities', name: 'Utilities', type: 'expense' },
-  { id: 'meals', name: 'Student Meals', type: 'expense' },
-  { id: 'transport', name: 'Transportation', type: 'expense' },
+  { id: 'books', name: 'Books', type: 'expense' },
+  { id: 'stationary', name: 'Stationary', type: 'expense' },
+  { id: 'consumables', name: 'Consumables', type: 'expense' },
+  { id: 'educational_tools', name: 'Educational Tools', type: 'expense' }, 
   { id: 'other_expense', name: 'Other Expenses', type: 'expense' }
 ];
 

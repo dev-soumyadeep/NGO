@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getIncomeCategories, getExpenseCategories,addTransaction } from '@/api/financialService';
+import { getIncomeCategories, getExpenseCategories, addTransaction } from '@/api/financialService';
 import { useAuth } from '@/context/AuthContext';
+
 interface AddTransactionFormProps {
   schoolId: string;
   onTransactionAdded: () => void;
@@ -18,51 +18,52 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
   const { toast } = useToast();
   const { state } = useAuth();
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     type: 'income',
     category: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     description: '',
+    studentId: '', // Added studentId field
   });
 
   const incomeCategories = getIncomeCategories();
   const expenseCategories = getExpenseCategories();
-  
+
   const categories = formData.type === 'income' ? incomeCategories : expenseCategories;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Reset category when type changes
     if (name === 'type') {
-      setFormData(prev => ({ ...prev, category: '' }));
+      setFormData((prev) => ({ ...prev, category: '' }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.category) {
       toast({
-        title: "Error",
-        description: "Please select a category",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please select a category',
+        variant: 'destructive',
       });
       return;
     }
 
     if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
       toast({
-        title: "Error",
-        description: "Please enter a valid amount",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please enter a valid amount',
+        variant: 'destructive',
       });
       return;
     }
@@ -72,6 +73,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
       await addTransaction(
         {
           schoolId,
+          studentId: formData.studentId || undefined, // Include studentId if provided
           type: formData.type as 'income' | 'expense',
           category: formData.category,
           amount: Number(formData.amount),
@@ -80,12 +82,12 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
         },
         state.token || '' // Pass the token from AuthContext
       );
-      
+
       toast({
-        title: "Success",
-        description: "Transaction added successfully",
+        title: 'Success',
+        description: 'Transaction added successfully',
       });
-      
+
       // Reset form
       setFormData({
         type: 'income',
@@ -93,16 +95,16 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
         amount: '',
         date: new Date().toISOString().split('T')[0],
         description: '',
+        studentId: '', // Reset studentId
       });
-      
+
       // Notify parent component to refresh data
       onTransactionAdded();
-      
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add transaction. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to add transaction. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -119,8 +121,8 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
           <div className="grid gap-6">
             <div className="grid gap-3">
               <Label htmlFor="type">Transaction Type</Label>
-              <Select 
-                value={formData.type} 
+              <Select
+                value={formData.type}
                 onValueChange={(value) => handleSelectChange('type', value)}
               >
                 <SelectTrigger>
@@ -132,18 +134,18 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid gap-3">
               <Label htmlFor="category">Category</Label>
-              <Select 
-                value={formData.category} 
+              <Select
+                value={formData.category}
                 onValueChange={(value) => handleSelectChange('category', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -151,7 +153,19 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
                 </SelectContent>
               </Select>
             </div>
-            
+
+            <div className="grid gap-3">
+              <Label htmlFor="studentId">Student ID (Optional)</Label>
+              <Input
+                id="studentId"
+                name="studentId"
+                type="text"
+                placeholder="Enter student ID (if applicable)"
+                value={formData.studentId}
+                onChange={handleChange}
+              />
+            </div>
+
             <div className="grid gap-3">
               <Label htmlFor="amount">Amount (₹)</Label>
               <Input
@@ -166,7 +180,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
                 required
               />
             </div>
-            
+
             <div className="grid gap-3">
               <Label htmlFor="date">Date</Label>
               <Input
@@ -178,7 +192,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
                 required
               />
             </div>
-            
+
             <div className="grid gap-3">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -191,7 +205,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolId, onTra
                 required
               />
             </div>
-            
+
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Adding...' : 'Add Transaction'}
             </Button>

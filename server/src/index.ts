@@ -8,7 +8,9 @@ import authRoutes from './routes/authRoutes';
 import schoolRoutes from './routes/schoolRoutes';
 import transactionRoutes from './routes/transactionRoute';
 import studentRoutes from './routes/studentsRoutes';
-
+import categoryRoutes from './routes/categoryRoutes';
+import itemRoutes from './routes/itemRoutes';
+import schoolItemRoutes from './routes/schoolItemRoutes';
 dotenv.config();
 
 const app = express();
@@ -32,7 +34,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/school', schoolRoutes);
 app.use('/api/transaction', transactionRoutes);
 app.use('/api/student', studentRoutes);
-
+app.use('/api/inventory/categories', categoryRoutes);
+app.use('/api/inventory/items',itemRoutes);
+app.use('/api/inventory/school-item', schoolItemRoutes);
 // Ping server function
 const pingServer = () => {
   const url = process.env.RENDER_SERVER_URL || 'https://ngo-myd7.onrender.com/'; 

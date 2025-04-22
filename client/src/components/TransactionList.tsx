@@ -5,33 +5,30 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
 import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { deleteTransaction } from '@/api/financialService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { CSVLink } from 'react-csv';
-
-
+import { FiSearch } from 'react-icons/fi'; 
 interface TransactionListProps {
   transactions: Transaction[];
   type: 'income' | 'expense' | 'all';
@@ -43,20 +40,31 @@ const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   type,
   title,
-  onTransactionDeleted
+  onTransactionDeleted,
 }) => {
   const { state } = useAuth();
   const { toast } = useToast();
 
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
 
   const filteredTransactions =
     type === 'all'
       ? transactions
       : transactions.filter((t) => t.type === type);
 
-  const sortedTransactions = [...filteredTransactions].sort(
+  // Updated search logic
+  const searchedTransactions =
+    searchQuery.trim() === '' // If search query is empty, show all transactions
+      ? filteredTransactions
+      : filteredTransactions.filter((transaction) =>
+          transaction.studentId
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase())
+        );
+
+  const sortedTransactions = [...searchedTransactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
@@ -88,64 +96,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
-  // Function to generate PDF
-  const downloadPDF = async () => {
-    const { default: jsPDF } = await import('jspdf');
-    const autoTable = (await import('jspdf-autotable')).default;
-  
-    const doc = new jsPDF();
-  
-    // Add the title
-    doc.text(title, 14, 10);
-  
-    // Calculate totals
-    const totalIncome = sortedTransactions
-      .filter((transaction) => transaction.type === 'income')
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-  
-    const totalExpense = sortedTransactions
-      .filter((transaction) => transaction.type === 'expense')
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-  
-    const netBalance = totalIncome - totalExpense;
-  
-    // Add the main table
-    autoTable(doc, {
-      head: [['Date', 'Type', 'Category', 'Description', 'Amount']],
-      body: sortedTransactions.map((transaction) => [
-        format(new Date(transaction.date), 'MMM dd, yyyy'), // Format the date
-        transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1), // Capitalize type
-        transaction.category.replace('_', ' '), // Replace underscores in category
-        transaction.description || '-', // Handle empty descriptions
-        `${transaction.amount.toLocaleString()}`, // Ensure amount is properly formatted
-      ]),
-    });
-  
-    // Add totals at the end of the PDF
-    autoTable(doc, {
-      body: [
-        ['Total Income', '', '', '', `${totalIncome.toLocaleString()}`],
-        ['Total Expense', '', '', '', `${totalExpense.toLocaleString()}`],
-        ['Net Balance', '', '', '', `${netBalance.toLocaleString()}`],
-      ],
-      theme: 'plain', // Use a plain theme for the totals
-      styles: { fontStyle: 'bold' }, // Make the totals bold
-      margin: { top: 10 }, // Add some margin above the totals
-    });
-  
-    // Save the PDF
-    doc.save(`${title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
-  };
-
-  // Prepare data for CSV
-  const csvData = sortedTransactions.map((transaction) => ({
-    Date: format(new Date(transaction.date), 'MMM dd, yyyy'),
-    Type: transaction.type,
-    Category: transaction.category,
-    Description: transaction.description,
-    Amount: transaction.amount,
-  }));
-
   return (
     <>
       <Card>
@@ -160,23 +110,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
         >
           <div className="flex justify-between items-center">
             <CardTitle className="text-xl font-bold">{title}</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={downloadPDF}>
-                Download PDF
-              </Button>
-              <CSVLink
-                data={csvData}
-                filename={`${title.replace(/\s+/g, '_').toLowerCase()}.csv`}
-                className="btn btn-outline btn-sm"
-              >
-                <Button variant="outline" size="sm">
-                  Download CSV
-                </Button>
-              </CSVLink>
-            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-4">
+          {/* Search Bar */}
+          <div className="mb-6">
+          <div className="flex items-center space-x-2">
+            <FiSearch className="text-gray-500 w-5 h-5" /> {/* Magnifying glass icon */}
+            <h2 className="text-lg font-semibold text-gray-700">Search Transactions by Student-ID</h2>
+          </div>
+          <div className="flex items-center space-x-2 mt-2">
+            <Input
+              type="text"
+              placeholder="Enter Student ID to search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-2 border-brand-indigo focus:ring-2 focus:ring-brand-indigo focus:outline-none rounded-lg p-2 w-full"
+            />
+          </div>
+        </div>
+
+
           {sortedTransactions.length === 0 ? (
             <div className="p-6 text-center text-gray-500">
               No transactions to display
@@ -189,6 +143,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   {type === 'all' && <TableHead>Type</TableHead>}
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Student ID</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -223,6 +178,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     </TableCell>
 
                     <TableCell>{transaction.description}</TableCell>
+
+                    <TableCell>
+                      {transaction.studentId || '-'} {/* Display studentId or a dash if not present */}
+                    </TableCell>
 
                     <TableCell
                       className={`text-right font-semibold ${

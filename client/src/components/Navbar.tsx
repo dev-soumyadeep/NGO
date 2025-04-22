@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, Plus, LogIn, LogOut, School, Calculator } from 'lucide-react';
+import { Menu, X, Plus, LogIn, LogOut, School, Calculator, Box,Package  } from 'lucide-react'; // Import Box icon for inventory
 import { Users } from 'lucide-react';
+
 const Navbar: React.FC = () => {
   const { state, logout } = useAuth();
   const navigate = useNavigate();
@@ -24,34 +24,54 @@ const Navbar: React.FC = () => {
               <span className="ml-2 text-2xl font-bold text-brand-indigo">NGO</span>
             </Link>
           </div>
-          
+
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors">
+            <Link
+              to="/"
+              className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors"
+            >
               Home
             </Link>
-            <Link to="/schools" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors">
+            <Link
+              to="/schools"
+              className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors"
+            >
               Schools
             </Link>
-            
+
             {state.isAuthenticated && state.user?.role === 'admin' && (
               <>
-                <Link 
-                  to="/finance" 
+                <Link
+                  to="/finance"
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
                 >
                   <Calculator className="h-4 w-4 mr-1" />
                   Finance
                 </Link>
-                <Link 
-                  to="/students" 
+                <Link
+                  to="/inventory"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
+                >
+                  <Package className="h-4 w-4 mr-1 text-gray-800" />
+                  Inventory
+                </Link>
+                <Link
+                  to="/central-inventory"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
+                >
+                  <Box className="h-4 w-4 mr-1 text-gray-800" />
+                  Central Inventory
+                </Link>
+                <Link
+                  to="/students"
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
                 >
                   <Users className="h-4 w-4 mr-1 text-gray-800" />
                   Students
                 </Link>
-                <Button 
-                  onClick={() => navigate('/add-school')} 
+                <Button
+                  onClick={() => navigate('/add-school')}
                   className="bg-brand-blue hover:bg-brand-indigo text-white ml-2 flex items-center"
                 >
                   <Plus className="h-4 w-4 mr-1" />
@@ -59,20 +79,20 @@ const Navbar: React.FC = () => {
                 </Button>
               </>
             )}
-            
+
             {state.isAuthenticated ? (
-              <Button 
-                onClick={logout} 
-                variant="outline" 
+              <Button
+                onClick={logout}
+                variant="outline"
                 className="border-brand-blue text-brand-blue hover:text-brand-indigo hover:border-brand-indigo ml-2 flex items-center"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 Logout
               </Button>
             ) : (
-              <Button 
-                onClick={() => navigate('/login')} 
-                variant="outline" 
+              <Button
+                onClick={() => navigate('/login')}
+                variant="outline"
                 className="border-brand-blue text-brand-blue hover:text-brand-indigo hover:border-brand-indigo ml-2 flex items-center"
               >
                 <LogIn className="h-4 w-4 mr-1" />
@@ -80,7 +100,7 @@ const Navbar: React.FC = () => {
               </Button>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="flex md:hidden items-center">
             <button
@@ -96,7 +116,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg">
@@ -114,7 +134,7 @@ const Navbar: React.FC = () => {
           >
             Schools
           </Link>
-          
+
           {state.isAuthenticated && state.user?.role === 'admin' && (
             <>
               <Link
@@ -126,6 +146,14 @@ const Navbar: React.FC = () => {
                 Finance
               </Link>
               <Link
+                to="/inventory"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 flex items-center"
+              >
+                <Box className="h-4 w-4 mr-2" />
+                Central Inventory
+              </Link>
+              <Link
                 to="/add-school"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 flex items-center"
@@ -135,7 +163,7 @@ const Navbar: React.FC = () => {
               </Link>
             </>
           )}
-          
+
           {state.isAuthenticated ? (
             <button
               onClick={() => {

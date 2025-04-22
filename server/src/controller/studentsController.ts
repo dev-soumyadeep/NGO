@@ -2,21 +2,48 @@ import { Request, Response } from 'express';
 import { Student } from '../models/Student';
 
 // Add a new student
+// Add a new student
 export const addStudent = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
-    const { name, contact, emailId, address, details } = req.body;
-
-    if (!name || !contact) {
-      return res.status(400).json({ success: false, message: 'Name and contact are required.' });
-    }
-
-    const student = new Student({
+    const {
       name,
+      class: studentClass,
       contact,
       emailId,
       address,
       details,
+      dateOfBirth,
+      dateOfAdmission,
+      fatherName,
+      motherName,
+      fatherPhone,
+      motherPhone,
+      imageUrl, // Extract imageUrl from the request body
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !studentClass || !contact || !dateOfBirth || !dateOfAdmission) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, class, contact, date of birth, and date of admission are required.',
+      });
+    }
+
+    const student = new Student({
+      name,
+      class: studentClass,
+      contact,
+      emailId,
+      address,
+      details,
+      dateOfBirth,
+      dateOfAdmission,
+      fatherName,
+      motherName,
+      fatherPhone,
+      motherPhone,
+      imageUrl, // Include imageUrl in the student object
       schoolId,
     });
 
@@ -75,7 +102,6 @@ export const batchDeleteStudentsBySchool = async (req: Request, res: Response) =
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
-
 
 // Count all students across all schools
 export const countAllStudents = async (req: Request, res: Response) => {
