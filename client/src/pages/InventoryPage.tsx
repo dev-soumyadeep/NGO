@@ -94,7 +94,7 @@ const InventoryPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSchools.map((school) => (
-              <Link key={school._id} to={`/inventory/${school._id}`} className="block">
+              <Link key={school.id} to={`/inventory/${school.id}`} className="block">
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                   <CardHeader className="bg-brand-blue text-white">
                     <CardTitle className="flex items-center">

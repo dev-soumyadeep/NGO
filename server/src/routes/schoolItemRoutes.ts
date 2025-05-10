@@ -1,9 +1,9 @@
 import express from 'express';
-import { createSchoolItem,getSchoolItemsBySchoolId,updateSchoolItemStock} from '../controller/schoolItemController';
+import { createSchoolItemController  ,getSchoolItemsBySchoolIdController,updateSchoolItemStock} from '../controller/schoolItemController';
 
 const schoolItemRoutes = express.Router();
 
-schoolItemRoutes.post('/add', createSchoolItem);
-schoolItemRoutes.get('/:id', getSchoolItemsBySchoolId);
-schoolItemRoutes.post('/update/:id', updateSchoolItemStock);
+schoolItemRoutes.post('/add', createSchoolItemController);
+schoolItemRoutes.get('/:id', getSchoolItemsBySchoolIdController);
+schoolItemRoutes.post('/update/:name', updateSchoolItemStock);
 export default schoolItemRoutes;

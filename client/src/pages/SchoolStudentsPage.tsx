@@ -4,14 +4,15 @@ import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AddStudentForm } from '../components/AddStudentForm';
-import { getStudentsBySchool, addStudent, deleteStudent } from '../api/studentService';
+import { getStudentsBySchool, addStudent, deleteStudent, addAlumniFromStudentId } from '../api/studentService';
+import { convertStudentIdToAlumniId } from '../api/financialService';
 import { Student } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FilterButton } from '@/components/FilterButton';
 import { StudentCard } from '@/components/StudentCard';
-import { set } from 'date-fns';
+
 const SchoolStudentsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const SchoolStudentsPage: React.FC = () => {
         const data = await getStudentsBySchool(id, state.token || '');
         setStudents(data);
         setFilteredStudents(data);
-        console.log(data) // Initially show all students
+        console.log(data) 
   
         // Generate filter options dynamically
         const classes = Array.from(new Set(data.map((student) => student.class))); // Unique classes
@@ -98,15 +99,15 @@ const SchoolStudentsPage: React.FC = () => {
     }
   },[students, renderFirst]);
 
-  const handleAddStudent = async (student: Omit<Student, '_id'>) => {
+  const handleAddStudent = async (student: Omit<Student, 'id'>) => {
     console.log(student)
     try {
       const newStudent = await addStudent(id || '', student, state.token || '');
       setStudents((prev) => [...prev, newStudent]);
-      setFilteredStudents((prev) => [...prev, newStudent]); // Update filtered list
+      setFilteredStudents((prev) => [...prev, newStudent]); 
       toast({
         title: 'Success',
-        description: 'Student added successfully.',
+        description: `Student ID: ${newStudent.id},Student added successfully.`,
       });
     } catch (error) {
       console.error('Error adding student:', error);
@@ -120,12 +121,15 @@ const SchoolStudentsPage: React.FC = () => {
 
   const handleRemoveStudent = async (studentId: string) => {
     try {
+      console.log(state.token)
+      await convertStudentIdToAlumniId(studentId, state.token || '');
+      await addAlumniFromStudentId(studentId, state.token || '');
       await deleteStudent(studentId, state.token || '');
-      setStudents((prev) => prev.filter((student) => student._id !== studentId));
-      setFilteredStudents((prev) => prev.filter((student) => student._id !== studentId)); // Update filtered list
+      setStudents((prev) => prev.filter((student) => student.id !== studentId));
+      setFilteredStudents((prev) => prev.filter((student) => student.id !== studentId)); // Update filtered list
       toast({
         title: 'Success',
-        description: `Student with ID ${studentId} removed successfully.`,
+        description: `Student with ID ${studentId} removed successfully and added to alumni list with ID ${studentId.replace(/^STU-/, 'ALU-')}`,
       });
     } catch (error) {
       console.error('Error removing student:', error);
@@ -162,10 +166,10 @@ const SchoolStudentsPage: React.FC = () => {
             console.warn('Missing dateOfBirth for student:', student);
             return false;
           }
-  
+          const dob= new Date(student.dateOfBirth).toISOString().split('T')[0]
           // Parse the `dd/mm/yyyy` format into a valid Date object
-          const [day, month, year] = student.dateOfBirth.split('/').map(Number);
-          const studentDate = new Date(year, month - 1, day); // Create a valid Date object
+          const [year, month, day] = dob.split('-').map(Number);
+          const studentDate = new Date(year, month - 1, day);
           const studentMonth = studentDate.getMonth(); // Get the month (0-11)
           return studentMonth === currentMonth;
         })
@@ -180,7 +184,8 @@ const SchoolStudentsPage: React.FC = () => {
         if (!student.dateOfAdmission) return false;
 
         // Extract year from `dd/mm/yyyy` format
-        const admissionYear = student.dateOfAdmission.split('/')[2]; // Get the year part
+        const doa = new Date(student.dateOfAdmission).toISOString().split('T')[0]
+        const admissionYear = doa.split('-')[0]; // Get the year part
         return admissionYear === year; // Compare with the extracted year
       })
     );
@@ -230,9 +235,9 @@ const SchoolStudentsPage: React.FC = () => {
                   <ul className="space-y-4">
                     {filteredStudents.map((student) => (
                       <StudentCard
-                        key={student._id}
+                        key={student.id}
                         student={student}
-                        onRemove={() =>  confirmRemoveStudent(student._id || '', student.name)}
+                        onRemove={() =>  confirmRemoveStudent(student.id || '', student.name)}
                       />
                     ))}
                   </ul>
@@ -245,7 +250,7 @@ const SchoolStudentsPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-lg p-6 w-96">
                 <h2 className="text-lg font-bold mb-4">Confirm Removal</h2>
                 <p>
-                  Are you sure you want to remove <strong>{confirmDialog.studentName}</strong>? This action cannot be undone.
+                  Are you sure you want to remove <strong>{confirmDialog.studentName}</strong> and make an alumni? This action cannot be undone.
                 </p>
                 <div className="mt-6 flex justify-end space-x-4">
                   <button

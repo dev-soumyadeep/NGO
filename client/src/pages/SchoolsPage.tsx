@@ -52,7 +52,7 @@ const SchoolsPage: React.FC = () => {
 
   const handleSchoolDeleted = (deletedSchoolId: string) => {
     // Remove the deleted school from the state
-    const updatedSchools = schools.filter((school) => school._id !== deletedSchoolId);
+    const updatedSchools = schools.filter((school) => school.id !== deletedSchoolId);
     setSchools(updatedSchools);
     setFilteredSchools(updatedSchools);
 
@@ -126,9 +126,9 @@ const SchoolsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSchools.map((school) => (
               <SchoolCard
-                key={school._id}
+                key={school.id}
                 school={school}
-                onSchoolDeleted={() => handleSchoolDeleted(school._id)} // Pass the callback
+                onSchoolDeleted={() => handleSchoolDeleted(school.id)} // Pass the callback
               />
             ))}
           </div>

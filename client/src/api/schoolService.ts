@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { School } from '@/types';
 
-// const API_BASE_URL = `http://localhost:5000/api/school`; 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/school`; 
+const API_BASE_URL = `http://localhost:5000/api/school`; 
+// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/school`; 
 
 export const getSchools = async (): Promise<School[]> => {
   try {
@@ -25,7 +25,7 @@ export const getSchool = async (id: string): Promise<School> => {
 };
 
 export const createSchool = async (
-  schoolData: Omit<School, '_id' | 'createdAt' | 'updatedAt'>,
+  schoolData: Omit<School,'createdAt' | 'updatedAt'>,
   token: string
 ): Promise<School> => {
   try {
@@ -55,5 +55,29 @@ export const deleteSchool = async (schoolId: string, token: string): Promise<voi
   } catch (error) {
     console.error('Error deleting school:', error);
     throw new Error(error.response?.data?.message || 'Failed to delete school');
+  }
+};
+
+// Service to get a school by its ID
+export const getSchoolById = async (id: string): Promise<School> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    // Assuming backend returns { message: "...", school: {...} }
+    return response.data.school;
+  } catch (error) {
+    console.error('Error fetching school:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch school');
+  }
+};
+
+
+
+export const getSchoolNameById = async (id: string): Promise<string> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/name/${id}`);
+    return response.data.schoolName;
+  } catch (error) {
+    console.error('Error fetching school name:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch school name');
   }
 };

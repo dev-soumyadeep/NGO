@@ -3,13 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Student } from '@/types';
 import { uploadImageToCloudinary } from '@/api/uploadImageService'; // Import the Cloudinary upload function
-
+import { checkStudentIdExists } from '@/api/studentService';
+import { useAuth } from '@/context/AuthContext';
 interface AddStudentFormProps {
-  onAddStudent: (student: Omit<Student, '_id'>) => void;
+  onAddStudent: (student: Omit<Student, 'id'>) => void;
 }
 
 export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) => {
-  const [formData, setFormData] = useState<Omit<Student, '_id'>>({
+  const [formData, setFormData] = useState<Omit<Student, 'id'>>({
     name: '',
     class: '',
     contact: '',
@@ -28,7 +29,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) 
   const [imageFile, setImageFile] = useState<File | null>(null); // State to store the uploaded image file
   const [imagePreview, setImagePreview] = useState<string | null>(null); // State to store the image preview URL
   const [uploading, setUploading] = useState<boolean>(false); // State to track upload status
-
+  const {state}=useAuth();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const formattedValue =
@@ -51,17 +52,16 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) 
       setImageFile(file); // Store the selected file
       setImagePreview(URL.createObjectURL(file)); // Generate a preview URL
     }
-  };
+};
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
     // Validate required fields
     if (!formData.name || !formData.class || !formData.contact || !formData.dateOfBirth || !formData.dateOfAdmission) {
       alert('Name, Class, Contact, Date of Birth, and Date of Admission are required fields.');
       return;
     }
-
     let imageUrl = '';
     if (imageFile) {
       setUploading(true);
@@ -76,7 +76,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) 
     }
 
     // Send the processed data
-    onAddStudent({ ...formData, imageUrl });
+    onAddStudent({ ...formData, imageUrl});
 
     // Reset the form
     setFormData({

@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getSchoolItemsBySchoolId, updateSchoolItemStock } from '@/api/inventoryService';
-import { addTransaction } from '@/api/financialService'; // Ensure this exists
-import { SchoolItem, Item } from '@/types';
-
-type SchoolItemPopulated = Omit<SchoolItem, 'itemId'> & { _id?: string; itemId: string | Item };
+import { addTransaction } from '@/api/financialService';
+import { checkStudentIdExists } from '@/api/studentService';
+import { SchoolItem } from '@/types';
 
 const SchoolInventoryPage: React.FC = () => {
   const { id: schoolId } = useParams<{ id: string }>();
@@ -18,14 +17,14 @@ const SchoolInventoryPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [schoolItems, setSchoolItems] = useState<SchoolItemPopulated[]>([]);
+  const [schoolItems, setSchoolItems] = useState<SchoolItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Selling form state
   const [studentId, setStudentId] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [sellQuantity, setSellQuantity] = useState('');
   const [sellPrice, setSellPrice] = useState('');
+  const [isValidStudent, setIsValidStudent] = useState(true);
 
   useEffect(() => {
     if (!state.isAuthenticated) {
@@ -47,6 +46,7 @@ const SchoolInventoryPage: React.FC = () => {
         const data = await getSchoolItemsBySchoolId(schoolId);
         setSchoolItems(data);
       } catch (error) {
+        console.log(error);
         toast({
           title: 'Error',
           description: 'Failed to fetch school items. Please try again.',
@@ -60,7 +60,31 @@ const SchoolInventoryPage: React.FC = () => {
     fetchSchoolItems();
   }, [schoolId, state.isAuthenticated, state.user, navigate, toast]);
 
-  // Selling handler
+  const validateStudentId = async () => {
+    if (!studentId) return;
+  
+    try {
+      const exists = await checkStudentIdExists(studentId, state.token);
+      setIsValidStudent(exists);
+      if (!exists) {
+        toast({
+          title: 'Invalid Student ID',
+          description: 'This student does not exist. Please check the ID.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error checking student ID:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to verify student ID.',
+        variant: 'destructive',
+      });
+      setIsValidStudent(false);
+    }
+  };
+  
+
   const handleSell = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentId || !selectedItemId || !sellQuantity || !sellPrice) {
@@ -71,9 +95,9 @@ const SchoolInventoryPage: React.FC = () => {
       });
       return;
     }
-    const item = schoolItems.find((i) =>
-      (typeof i.itemId === 'string' ? i.itemId : i.itemId._id) === selectedItemId
-    );
+
+    const item = schoolItems.find((i) => i.itemId === selectedItemId);
+
     if (!item) {
       toast({
         title: 'Error',
@@ -82,6 +106,7 @@ const SchoolInventoryPage: React.FC = () => {
       });
       return;
     }
+
     if (Number(sellQuantity) > item.quantity) {
       toast({
         title: 'Error',
@@ -92,33 +117,32 @@ const SchoolInventoryPage: React.FC = () => {
     }
 
     try {
-      // 1. Add transaction
       await addTransaction({
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
         schoolId: schoolId!,
         studentId,
         type: 'income',
         category: 'Item Sale',
-        amount: Number(sellPrice),
-        date: new Date().toISOString(),
-        description: `Sold ${sellQuantity} of ${typeof item.itemId === 'string' ? item.itemId : item.itemId.name} to student ${studentId}`,
+        quantity: Number(sellQuantity),
+        price: Number(sellPrice),
+        amount: Number(sellQuantity)*Number(sellPrice),
+        itemName: item.name || '',
+        description: `Sold ${sellQuantity} of ${item.name} to student ${studentId}`,
       }, state.token);
 
-      // 2. Update school stock item
       const leftoverQuantity = item.quantity - Number(sellQuantity);
-      const leftoverPrice = item.price - Number(sellPrice);
-      const itemIdForUpdate = typeof item.itemId === 'string' ? item.itemId : item.itemId._id!;
-      await updateSchoolItemStock(itemIdForUpdate, leftoverQuantity, leftoverPrice);
+      await updateSchoolItemStock(item.name, leftoverQuantity, item.price);
 
       toast({
         title: 'Success',
-        description: 'Item sold and stock updated.',
+        description: 'Item sold, transaction added and stock updated.',
+        variant: 'default',
       });
 
-      // Refresh the school items list
       const updatedItems = await getSchoolItemsBySchoolId(schoolId!);
       setSchoolItems(updatedItems);
 
-      // Reset form
       setStudentId('');
       setSelectedItemId('');
       setSellQuantity('');
@@ -151,7 +175,12 @@ const SchoolInventoryPage: React.FC = () => {
                     <Input
                       type="text"
                       value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
+                      onChange={(e) => {
+                        setStudentId(e.target.value);
+                        setIsValidStudent(true); 
+                      }}
+                      onBlur={validateStudentId}
+                      className={!isValidStudent ? 'border-red-500' : ''}
                       required
                     />
                   </div>
@@ -160,16 +189,17 @@ const SchoolInventoryPage: React.FC = () => {
                     <select
                       className="w-full border rounded px-3 py-2"
                       value={selectedItemId}
-                      onChange={(e) => setSelectedItemId(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedItemId(e.target.value);
+                        const selected = schoolItems.find(item => item.itemId === e.target.value);
+                        setSellPrice(selected?.price.toString() || '');
+                      }}
                       required
                     >
                       <option value="">Select item</option>
                       {schoolItems.map((item) => (
-                        <option
-                          key={item._id}
-                          value={typeof item.itemId === 'string' ? item.itemId : item.itemId._id}
-                        >
-                          {typeof item.itemId === 'string' ? item.itemId : item.itemId.name}
+                        <option key={item.itemId} value={item.itemId}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
@@ -179,6 +209,7 @@ const SchoolInventoryPage: React.FC = () => {
                     <Input
                       type="number"
                       min={1}
+                      max={schoolItems.find((i) => i.itemId === selectedItemId)?.quantity || 0}
                       value={sellQuantity}
                       onChange={(e) => setSellQuantity(e.target.value)}
                       required
@@ -188,10 +219,18 @@ const SchoolInventoryPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">Price</label>
                     <Input
                       type="number"
-                      min={1}
+                      min={schoolItems.find((i) => i.itemId === selectedItemId)?.price || 0}
                       value={sellPrice}
                       onChange={(e) => setSellPrice(e.target.value)}
                       required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                    <Input
+                      type="number"
+                      value={Number(sellQuantity) * Number(sellPrice)}
+                      readOnly
                     />
                   </div>
                   <Button type="submit" className="w-full">
@@ -214,26 +253,33 @@ const SchoolInventoryPage: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500">No items assigned to this school.</p>
               </div>
             ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">School Inventory</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-6">School Inventory</h2>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200 text-gray-700">
+                      <th className="p-4 text-left">Item Name</th>
+                      <th className="p-4 text-left">Quantity</th>
+                      <th className="p-4 text-left">Price</th>
+                      <th className="p-4 text-left">Total Amount</th>
+                      <th className="p-4 text-left">Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {schoolItems.map((item) => (
-                      <li key={item._id} className="p-4 bg-white rounded shadow flex justify-between items-center">
-                        <div>
-                          <div className="font-semibold">
-                            {typeof item.itemId === 'string' ? item.itemId : item.itemId.name}
-                          </div>
-                          <div className="text-gray-600 text-sm">Quantity: {item.quantity}</div>
-                          <div className="text-gray-600 text-sm">Price: ₹{item.price}</div>
-                        </div>
-                      </li>
+                      <tr key={item.itemId} className="border-t">
+                        <td className="p-4">{item.name}</td>
+                        <td className="p-4">{item.quantity}</td>
+                        <td className="p-4">₹{item.price}</td>
+                        <td className="p-4">₹{item.total_amount}</td>
+                        <td className="p-4">
+                          {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'N/A'}
+                        </td>
+                      </tr>
                     ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

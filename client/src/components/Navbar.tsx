@@ -43,11 +43,11 @@ const Navbar: React.FC = () => {
             {state.isAuthenticated && state.user?.role === 'admin' && (
               <>
                 <Link
-                  to="/finance"
+                  to="/central-finance"
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
                 >
                   <Calculator className="h-4 w-4 mr-1" />
-                  Finance
+                  Central Finance
                 </Link>
                 <Link
                   to="/inventory"
@@ -70,6 +70,20 @@ const Navbar: React.FC = () => {
                   <Users className="h-4 w-4 mr-1 text-gray-800" />
                   Students
                 </Link>
+                <Link
+                  to="/alumni"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
+                >
+                  <Users className="h-4 w-4 mr-1 text-gray-800" />
+                  Alumni
+                </Link>
+                <Link
+                  to="/track-item-purchase"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
+                >
+                  Track Item Purchase
+                </Link>
+                  
                 <Button
                   onClick={() => navigate('/add-school')}
                   className="bg-brand-blue hover:bg-brand-indigo text-white ml-2 flex items-center"

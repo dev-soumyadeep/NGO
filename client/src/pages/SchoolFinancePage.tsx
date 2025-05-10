@@ -19,8 +19,8 @@ const SchoolFinancePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  
   useEffect(() => {
-    // Check if user is authenticated and is an admin
     if (!state.isAuthenticated) {
       navigate('/login');
       return;
@@ -87,6 +87,16 @@ const SchoolFinancePage: React.FC = () => {
       </div>
     );
   }
+
+  // ✅ Sort and filter transactions
+  const sortedTransactions = [...financial.transactions].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return dateB - dateA;
+  });
+
+  const incomeTransactions = sortedTransactions.filter((tx) => tx.type === 'income');
+  const expenseTransactions = sortedTransactions.filter((tx) => tx.type === 'expense');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,7 +170,7 @@ const SchoolFinancePage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="col-span-1">
-            <AddTransactionForm schoolId={financial.school._id} onTransactionAdded={handleRefresh} />
+            <AddTransactionForm schoolIdInSchoolFinance={financial.school.id} onTransactionAdded={handleRefresh} />
           </div>
 
           <div className="col-span-1 lg:col-span-2">
@@ -173,28 +183,25 @@ const SchoolFinancePage: React.FC = () => {
 
               <TabsContent value="all">
                 <TransactionList
-                  transactions={financial.transactions}
+                  transactions={sortedTransactions}
                   type="all"
                   title="All Transactions"
-                  onTransactionDeleted={handleRefresh} // Pass the refresh callback
                 />
               </TabsContent>
 
               <TabsContent value="income">
                 <TransactionList
-                  transactions={financial.transactions}
+                  transactions={incomeTransactions}
                   type="income"
                   title="Income Transactions"
-                  onTransactionDeleted={handleRefresh} // Pass the refresh callback
                 />
               </TabsContent>
 
               <TabsContent value="expense">
                 <TransactionList
-                  transactions={financial.transactions}
+                  transactions={expenseTransactions}
                   type="expense"
                   title="Expense Transactions"
-                  onTransactionDeleted={handleRefresh} // Pass the refresh callback
                 />
               </TabsContent>
             </Tabs>

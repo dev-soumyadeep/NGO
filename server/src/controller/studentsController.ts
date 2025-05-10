@@ -1,7 +1,30 @@
 import { Request, Response } from 'express';
-import { Student } from '../models/Student';
+import {
+  IStudent,
+  createStudent,
+  findStudentById,
+  listStudents,
+  updateStudent,
+  deleteStudent,
+  checkStudentIdExists,
+  listStudentsBySchoolId,
+} from '../models/Student';
 
-// Add a new student
+
+function toMySQLDateFormat(dateStr: string): string {
+  // Expects 'DD/MM/YYYY'
+  const [day, month, year] = dateStr.split('/');
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+const generateStudentId = () => {
+  const date = new Date();
+  const year = date.getFullYear().toString();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  return `STU-${year}${month}${day}${random}`;
+};
 // Add a new student
 export const addStudent = async (req: Request, res: Response) => {
   try {
@@ -19,48 +42,59 @@ export const addStudent = async (req: Request, res: Response) => {
       motherName,
       fatherPhone,
       motherPhone,
-      imageUrl, // Extract imageUrl from the request body
+      imageUrl,
     } = req.body;
 
+    let id = generateStudentId();
+    let response=await checkStudentIdExists(id);
+    while(response){
+      id=generateStudentId();
+      response= await checkStudentIdExists(id);
+    }
     // Validate required fields
-    if (!name || !studentClass || !contact || !dateOfBirth || !dateOfAdmission) {
+    if (!name || !studentClass || !contact || !dateOfBirth || !dateOfAdmission || !schoolId) {
       return res.status(400).json({
         success: false,
-        message: 'Name, class, contact, date of birth, and date of admission are required.',
+        message: 'Name, class, contact, date of birth, date of admission, and schoolId are required.',
       });
     }
 
-    const student = new Student({
+    const student: IStudent = {
+      id,
       name,
       class: studentClass,
       contact,
       emailId,
       address,
       details,
-      dateOfBirth,
-      dateOfAdmission,
+      dateOfBirth: toMySQLDateFormat(dateOfBirth),
+      dateOfAdmission: toMySQLDateFormat(dateOfAdmission),
       fatherName,
       motherName,
       fatherPhone,
       motherPhone,
-      imageUrl, // Include imageUrl in the student object
-      schoolId,
-    });
-
-    await student.save();
-    res.status(201).json({ success: true, data: student });
+      imageUrl,
+      schoolId:schoolId,
+    };
+    const createdStudent = await createStudent(student);
+    res.status(200).json({ success: true, data: createdStudent });
   } catch (error) {
     console.error('Error adding student:', error);
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };
 
-// Get the list of students for a specific school
+
 export const getStudentsBySchool = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
-
-    const students = await Student.find({ schoolId });
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: 'schoolId is required.' });
+    }
+    const students = await listStudentsBySchoolId(schoolId);
+    if(!students) {
+      return res.status(404).json({ success: false, message: 'No students found for this school.' });
+    }
     res.status(200).json({ success: true, data: students });
   } catch (error) {
     console.error('Error fetching students:', error);
@@ -72,13 +106,16 @@ export const getStudentsBySchool = async (req: Request, res: Response) => {
 export const removeStudent = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: 'studentId is required.' });
+    }
 
-    const student = await Student.findByIdAndDelete(studentId);
-
+    const student = await findStudentById(studentId);
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found.' });
     }
 
+    await deleteStudent(studentId);
     res.status(200).json({ success: true, message: 'Student removed successfully.' });
   } catch (error) {
     console.error('Error removing student:', error);
@@ -90,12 +127,20 @@ export const removeStudent = async (req: Request, res: Response) => {
 export const batchDeleteStudentsBySchool = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
-
-    const result = await Student.deleteMany({ schoolId });
-
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: 'schoolId is required.' });
+    }
+    // Get all students for this school
+    const students = await listStudentsBySchoolId(schoolId);
+    const ids = students.map(s => s.id);
+    let deletedCount = 0;
+    for (const id of ids) {
+      await deleteStudent(id!);
+      deletedCount++;
+    }
     res.status(200).json({
       success: true,
-      message: `${result.deletedCount} students deleted successfully.`,
+      message: `${deletedCount} students deleted successfully.`,
     });
   } catch (error) {
     console.error('Error deleting students:', error);
@@ -103,13 +148,72 @@ export const batchDeleteStudentsBySchool = async (req: Request, res: Response) =
   }
 };
 
-// Count all students across all schools
+
 export const countAllStudents = async (req: Request, res: Response) => {
   try {
-    const totalStudents = await Student.countDocuments();
-    res.status(200).json({ success: true, total: totalStudents });
+    const students = await listStudents();
+    res.status(200).json({ success: true, total: students.length });
   } catch (error) {
     console.error('Error counting students:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+
+// Update student details
+export const updateStudentDetails = async (req: Request, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    const updateFields = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: 'studentId is required.' });
+    }
+
+    const student = await findStudentById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
+    await updateStudent(studentId, updateFields);
+    const updatedStudent = await findStudentById(studentId);
+
+    res.status(200).json({ success: true, data: updatedStudent, message: 'Student details updated successfully.' });
+  } catch (error) {
+    console.error('Error updating student:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+
+export const findStudentByStudentId = async (req: Request, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: 'studentId is required.' });
+    }
+    const student = await findStudentById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+    res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    console.error('Error finding student:', error);
+    res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+};
+
+
+export const checkStudentIdExistsController = async (req: Request, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: 'studentId is required.' });
+    }
+    const response = await checkStudentIdExists(studentId);
+    res.status(200).json({ success: true, data: response });
+  } catch (error) {
+    console.error('Error finding student:', error);
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };

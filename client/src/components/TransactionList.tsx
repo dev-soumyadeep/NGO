@@ -13,40 +13,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowDownCircle, ArrowUpCircle} from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { deleteTransaction } from '@/api/financialService';
-import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { FiSearch } from 'react-icons/fi'; 
 interface TransactionListProps {
   transactions: Transaction[];
   type: 'income' | 'expense' | 'all';
   title: string;
-  onTransactionDeleted: () => void;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   type,
-  title,
-  onTransactionDeleted,
+  title
 }) => {
-  const { state } = useAuth();
-  const { toast } = useToast();
 
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
 
   const filteredTransactions =
@@ -68,34 +51,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  const openDeleteDialog = (id: string) => {
-    setSelectedId(id);
-    setOpenDialog(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedId) return;
-
-    try {
-      await deleteTransaction(selectedId, state.token || '');
-      toast({
-        title: 'Success',
-        description: 'Transaction deleted successfully',
-      });
-      setOpenDialog(false);
-      setSelectedId(null);
-      onTransactionDeleted();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error.message || 'Failed to delete transaction. Please try again.',
-        variant: 'destructive',
-      });
-      setOpenDialog(false);
-    }
-  };
-
+  function formatDateTime(dateStr?: string | Date, format?: string) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+    if (format === 'date') return `${day}-${month}-${year}`;
+    else return `${hours}:${minutes}:${seconds}`;
+  }
   return (
     <>
       <Card>
@@ -145,12 +114,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <TableHead>Description</TableHead>
                   <TableHead>Student ID</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedTransactions.map((transaction) => (
-                  <TableRow key={transaction._id}>
+                  <TableRow key={transaction.id}>
                     <TableCell className="font-medium">
                       {format(new Date(transaction.date), 'MMM dd, yyyy')}
                     </TableCell>
@@ -193,16 +162,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       {transaction.type === 'income' ? '+' : '-'}₹
                       {transaction.amount.toLocaleString()}
                     </TableCell>
-
-                    <TableCell className="text-right">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => openDeleteDialog(transaction._id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+                    <TableCell className="p-2">{formatDateTime(transaction.createdAt,"time")}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -210,24 +170,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
           )}
         </CardContent>
       </Card>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <p>Are you sure you want to delete this transaction?</p>
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setOpenDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Yes, Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

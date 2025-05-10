@@ -2,8 +2,8 @@ import axios from 'axios';
 import { Transaction, SchoolFinancial } from '@/types';
 import { getSchool } from './schoolService';
 
-// const API_BASE_URL = `http://localhost:5000/api/transaction`; 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/transaction`; 
+const API_BASE_URL = `http://localhost:5000/api/transaction`; 
+// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/transaction`; 
 
 export const getIncomeCategories = () => [
   { id: 'tuition_fees', name: 'Tuition Fees', type: 'income' },
@@ -30,24 +30,14 @@ export const getSchoolFinancials = async (schoolId: string): Promise<SchoolFinan
 
     // Fetch transactions for the school
     const response = await axios.get(`${API_BASE_URL}/school/${schoolId}`);
-    const schoolTransactions: Transaction[] = response.data.data;
-
-    const totalIncome = schoolTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalExpense = schoolTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const netBalance = totalIncome - totalExpense;
-
+    const schoolTransactions: { netBalance: number; totalIncome: number; totalExpense: number; transactions: Transaction[] } = response.data;
+    console.log(schoolTransactions);
     return {
       school,
-      netBalance,
-      totalIncome,
-      totalExpense,
-      transactions: schoolTransactions
+      netBalance:schoolTransactions.netBalance,
+      totalIncome:schoolTransactions.totalIncome,
+      totalExpense:schoolTransactions.totalExpense,
+      transactions: schoolTransactions.transactions
     };
   } catch (error) {
     console.error('Error fetching school financials:', error);
@@ -56,7 +46,7 @@ export const getSchoolFinancials = async (schoolId: string): Promise<SchoolFinan
 };
 
 export const addTransaction = async (
-  transaction: Omit<Transaction, '_id' | 'createdAt' | 'updatedAt'>,
+  transaction: Omit<Transaction, 'createdAt' | 'updatedAt'>,
   token: string
 ): Promise<Transaction> => {
   try {
@@ -91,15 +81,60 @@ export const deleteTransaction = async (transactionId: string, token: string): P
 };
 
 
-export const batchDeleteTransactionsBySchoolId = async (schoolId: string, token: string): Promise<void> => {
-  try {
-    await axios.delete(`${API_BASE_URL}/batch-delete/${schoolId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-      },
-    });
-  } catch (error) {
-    console.error('Error deleting transactions in batch:', error);
-    throw new Error(error.response?.data?.message || 'Failed to delete transactions in batch');
-  }
+// export const batchDeleteTransactionsBySchoolId = async (schoolId: string, token: string): Promise<void> => {
+//   try {
+//     await axios.delete(`${API_BASE_URL}/batch-delete/${schoolId}`, {
+//       headers: {
+//         Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+//       },
+//     });
+//   } catch (error) {
+//     console.error('Error deleting transactions in batch:', error);
+//     throw new Error(error.response?.data?.message || 'Failed to delete transactions in batch');
+//   }
+// };
+
+export const getAllTransactions = async (): Promise<Transaction[]> => {
+  const response = await axios.get(`${API_BASE_URL}/all`);
+  return response.data.data;
+};
+
+// Get transactions by schoolId
+export const getTransactionsBySchoolId = async (schoolId: string): Promise<Transaction[]> => {
+  const response = await axios.get(`${API_BASE_URL}/school/${schoolId}`);
+  return response.data.data;
+};
+
+// Get transactions by studentId
+export const getTransactionsByStudentId = async (studentId: string): Promise<Transaction[]> => {
+  const response = await axios.get(`${API_BASE_URL}/student/${studentId}`);
+  return response.data.data;
+};
+
+// Get central finance summary (netBalance, totalIncome, totalExpense)
+export const getCentralFinanceSummary = async (): Promise<{ netBalance: number; totalIncome: number; totalExpense: number }> => {
+  const response = await axios.get(`${API_BASE_URL}/central-summary`);
+  return response.data;
+};
+
+// Get school finance summary (netBalance, totalIncome, totalExpense, schoolName) by schoolId
+export const getSchoolFinanceSummary = async (
+  schoolId: string
+): Promise<{
+  netBalance:number;
+  totalIncome: number;
+  totalExpense: number;
+}> => {
+  const response = await axios.get(`${API_BASE_URL}/school-summary/${schoolId}`);
+  return response.data;
+};
+
+
+
+export const convertStudentIdToAlumniId = async (studentId: string, token: string): Promise<void> => {
+  await axios.post(`${API_BASE_URL}/convert-student-id-to-alumni-id`, { studentId }, {
+    headers: {
+      Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+    },
+  });
 };

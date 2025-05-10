@@ -8,7 +8,7 @@ import { MapPin, Mail, Phone, Users, ExternalLink, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { deleteSchool } from '@/api/schoolService';
 import { useToast } from '@/hooks/use-toast';
-import { batchDeleteTransactionsBySchoolId } from '@/api/financialService';
+
 
 interface SchoolCardProps {
   school: School;
@@ -24,8 +24,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
 
   const handleDelete = async () => {
     try {
-      await batchDeleteTransactionsBySchoolId(school._id, state.token || '');
-      await deleteSchool(school._id, state.token || '');
+      await deleteSchool(school.id, state.token || '');
       toast({
         title: 'Success',
         description: 'School deleted successfully',
@@ -83,7 +82,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
               variant="outline"
               className="text-brand-blue border-brand-blue hover:bg-brand-blue hover:text-white"
             >
-              <Link to={`/finance/${school._id}`} className="flex items-center space-x-1">
+              <Link to={`/finance/${school.id}`} className="flex items-center space-x-1">
                 <span>View Finance</span>
                 <ExternalLink className="h-4 w-4 ml-1" />
               </Link>
@@ -93,7 +92,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
               variant="outline"
               className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
             >
-              <Link to={`/students/${school._id}`} className="flex items-center space-x-1">
+              <Link to={`/students/${school.id}`} className="flex items-center space-x-1">
                 <span>Students</span>
                 <ExternalLink className="h-4 w-4 ml-1" />
               </Link>

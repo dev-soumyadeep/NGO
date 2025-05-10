@@ -5,17 +5,19 @@ import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Category, Item } from '../types/index'; 
-import { getCategoryById, addItem,getItemsByCategoryId,updateItemStock,createSchoolItem } from '@/api/inventoryService'; 
+import { getCategoryById, addItem, getItemsByCategoryId, updateItemStock, createSchoolItem, deleteItemStock } from '@/api/inventoryService'; 
 import { FiArrowLeft } from 'react-icons/fi';
-
+import { useToast } from '@/hooks/use-toast';
+import { FiTrash } from 'react-icons/fi';
 const CategoryPage: React.FC = () => {
   const { state } = useAuth();
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>(); // Extract categoryId from the URL
-  const [category, setCategory] = useState<Category | null>(null); // Use Category interface for category details
-  const [items, setItems] = useState<Item[]>([]); // Use Item interface for items
-  const [loading, setLoading] = useState<boolean>(true); // State to handle loading
-  const [error, setError] = useState<string | null>(null); // State to handle errors
+  const { id } = useParams<{ id: string }>(); 
+  const [category, setCategory] = useState<Category | null>(null); 
+  const [items, setItems] = useState<Item[]>([]); 
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null); 
+  const { toast } = useToast();
   const fetchCategoryDetails = async () => {
     try {
       setLoading(true);
@@ -36,6 +38,7 @@ const CategoryPage: React.FC = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (!state.isAuthenticated) {
       navigate('/login');
@@ -50,7 +53,7 @@ const CategoryPage: React.FC = () => {
     fetchCategoryDetails();
   }, [id, state.isAuthenticated, state.user, navigate, state.token]);
 
-  const handleAddItem = async (newItem: { name: string; quantity: number; price: number; description?: string }) => {
+  const handleAddItem = async (newItem: { id: string; name: string; quantity: number; price: number; total_amount: number; description?: string }) => {
     if (!id) return; // Ensure category ID is available
     try {
       setLoading(true);
@@ -59,11 +62,13 @@ const CategoryPage: React.FC = () => {
       // Call the addItem service
       const addedItem = await addItem(
         {
+          id: newItem.id,
           name: newItem.name,
           description: newItem.description,
           quantity: newItem.quantity,
           price: newItem.price,
-          category_id: id, // Use the current category ID
+          total_amount: newItem.total_amount,
+          category_id: id, 
         },
         state.token
       );
@@ -71,13 +76,6 @@ const CategoryPage: React.FC = () => {
       // Add the new item to the items state
       setItems((prev) => [...prev, addedItem]);
 
-      // Update total investment in the category
-      if (category) {
-        setCategory((prev) => ({
-          ...prev!,
-          totalInvestment: prev!.totalInvestment! + addedItem.price * addedItem.quantity,
-        }));
-      }
     } catch (err) {
       setError(err.message || 'Failed to add item');
     } finally {
@@ -85,75 +83,99 @@ const CategoryPage: React.FC = () => {
     }
   };
 
-  const handleUpdateStock = async (itemId: string, quantityChange: number, upgradedPrice: number) => {
+  const handleUpdateStock = async (itemId: string, quantityChange: number, newprice: number, description: string) => {
     try {
       setLoading(true);
       setError(null);
-
+  
       // Call the updateItemStock service
-      const updatedItem = await updateItemStock(
+      const response = await updateItemStock(
         itemId,
-        { quantity: quantityChange, price: upgradedPrice },
+        { quantityChange, newprice, description },
         state.token
       );
-
-      // Update the items state with the updated item
-      setItems((prev) =>
-        prev.map((item) =>
-          item._id === itemId
-            ? {
-                ...item,
-                quantity: updatedItem.quantity,
-                price: updatedItem.price,
-                updatedAt: updatedItem.updatedAt, // Update the last updated timestamp
-              }
-            : item
-        )
-      );
-
-      // Optionally, update the total investment in the category
-      if (category) {
-        const totalInvestment = items.reduce(
-          (sum, item) =>
-            item._id === itemId
-              ? sum + updatedItem.price * updatedItem.quantity
-              : sum + item.price * item.quantity,
-          0
+      if ('data' in response) {
+        const updatedItem = response.data;
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? updatedItem
+              : item
+          )
         );
-        setCategory((prev) => ({
-          ...prev!,
-          totalInvestment,
-        }));
+      } else if ('message' in response && response.message.includes('deleted')) {
+        setItems((prev) => prev.filter((item) => item.id !== itemId));
+        toast({
+          title: 'info',
+          description: 'Quantity is zero. Item has been removed from the list.',
+          variant: 'default',
+        });
       }
+  
     } catch (err) {
       setError(err.message || 'Failed to update stock');
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleSendItem = async (
     schoolId: string,
     itemId: string,
+    name: string,
     quantity: number,
     price: number
   ) => {
     try {
-      await createSchoolItem(schoolId, itemId, quantity, price);
-      const item = items.find((i) => i._id === itemId);
+      const res=await createSchoolItem(schoolId, itemId, name, quantity, price);
+      console.log(res)
+      const item = items.find((i) => i.id === itemId);
       if (!item) throw new Error('Item not found in inventory');
-      const leftoverQuantity = item.quantity - quantity;
-      const leftoverPrice = item.price - price;
-      await updateItemStock(itemId, { quantity: leftoverQuantity, price: leftoverPrice }, state.token);
-  
-      // Refresh the list after update
-      await fetchCategoryDetails();
-  
+      const response =await updateItemStock(itemId, { quantityChange: -quantity, newprice: item.price }, state.token);
+      console.log(response)
+      if ('data' in response) {
+        const updatedItem = response.data;
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? updatedItem
+              : item
+          )
+        );
+      } else if ('message' in response && response.message.includes('deleted')) {
+        setItems((prev) => prev.filter((item) => item.id !== itemId));
+        toast({
+          title: 'info',
+          description: 'Quantity is zero. Item has been removed from the list.',
+          variant: 'default',
+        });
+      }
+
       console.log('Item sent and stock updated successfully!');
     } catch (error) {
       console.log(error.message || 'Failed to send item and update stock');
     }
   };
+
+  // Add this handler in your CategoryPage component
+const handleDeleteItem = async (itemId: string) => {
+  try {
+    await deleteItemStock(itemId, state.token);
+    setItems(prev => prev.filter(item => item.id !== itemId));
+    toast({
+      title: "Deleted",
+      description: "Item deleted successfully.",
+      variant: "default",
+    });
+  } catch (err) {
+    toast({
+      title: "Error",
+      description: err.message || "Failed to delete item.",
+      variant: "destructive",
+    });
+  }
+};
 
   if (loading) {
     return <div className="min-h-screen bg-gray-100 p-8">Loading...</div>;
@@ -179,7 +201,7 @@ const CategoryPage: React.FC = () => {
             </button>
             <h1 className="text-4xl font-bold text-brand-indigo">{category?.name}</h1>
           </div>
-          <p className="text-gray-600 text-lg">Category ID: {category?._id}</p>
+          <p className="text-gray-600 text-lg">Category ID: {category?.id}</p>
           <p className="text-gray-600 text-lg">Description: {category?.description || 'No description available'}</p>
           <p className="text-gray-600 text-lg">
             Created At: {category?.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
@@ -211,19 +233,31 @@ const CategoryPage: React.FC = () => {
                         <th className="p-4 text-left">Item Name</th>
                         <th className="p-4 text-left">Quantity</th>
                         <th className="p-4 text-left">Price</th>
+                        <th className="p-4 text-left">Total Amount</th>
                         <th className="p-4 text-left">Description</th>
                         <th className="p-4 text-left">Last Updated</th>
+                        <th className="p-4 text-left">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {items.map((item) => (
-                        <tr key={item._id} className="border-t">
+                        <tr key={item.id} className="border-t">
                           <td className="p-4">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A'}</td>
                           <td className="p-4">{item.name}</td>
                           <td className="p-4">{item.quantity}</td>
                           <td className="p-4">₹{item.price}</td>
+                          <td className="p-4">₹{item.total_amount}</td>
                           <td className="p-4">{item.description}</td>
                           <td className="p-4">{item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Not updated yet'}</td>
+                          <td>
+                              <button
+                                className="p-2 rounded hover:bg-red-100"
+                                onClick={() => handleDeleteItem(item.id)}
+                                title="Delete"
+                              >
+                                <FiTrash className="text-red-500 w-5 h-5" />
+                              </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

@@ -51,10 +51,11 @@ const CentralInventory: React.FC = () => {
     try {
       setLoading(true);
       const newCategory = await addInventory(
-        {name:categoryName.trim().toUpperCase(),description: categoryDescription},
+        {id:Date.now().toString() ,name:categoryName.trim().toUpperCase(),description: categoryDescription},
         state.token
       );
-      setCategories((prev) => [...prev, newCategory]); // Add the new category to the state
+      setCategories((prev) => [...prev, newCategory]); 
+      console.log(newCategory.createdAt)// Add the new category to the state
       setCategoryName(''); // Clear the input field
       setCategoryDescription(''); // Clear the description field
     } catch (error) {
@@ -145,23 +146,23 @@ const CentralInventory: React.FC = () => {
         {/* Categories List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (
-            <Card key={category._id} className="cursor-pointer hover:shadow-lg">
+            <Card key={category.id} className="cursor-pointer hover:shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">{category.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col space-y-2">
-                <span className="text-gray-500">Category-ID: {category._id}</span>
+                <span className="text-gray-500">Category-ID: {category.id}</span>
                 <span className="text-gray-500">
                   Created At: {new Date(category.createdAt || '').toLocaleDateString()}
                 </span>
                 <div className="flex justify-between items-center">
                   <FiTrash2
                     className="text-red-500 w-6 h-6 cursor-pointer"
-                    onClick={() => handleRemoveCategory(category._id)}
+                    onClick={() => handleRemoveCategory(category.id)}
                   />
                   <FiArrowRight
                     className="text-brand-indigo w-6 h-6 cursor-pointer"
-                    onClick={() => handleNavigate(category._id)} // Navigate to /inventory/{categoryId}
+                    onClick={() => handleNavigate(category.id)} // Navigate to /inventory/{categoryId}
                   />
                 </div>
               </CardContent>

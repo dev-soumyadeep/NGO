@@ -20,6 +20,9 @@ import CentralInventory from "./pages/CentralInventory";
 import CategoryPage from "./pages/CategoryPage";
 import InventoryPage from "./pages/InventoryPage";
 import SchoolInventoryPage from "./pages/schoolInventoryPage";
+import CentralFinance from "./pages/CentralFinance";
+import TrackItemPurchase from "./pages/TrackItemPurchase";
+import AlumniPage from "./pages/AlumniPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,6 +45,9 @@ const App = () => (
             <Route path="/add-school" element={<AddSchoolPage />} />
             <Route path="/central-inventory" element={<CentralInventory />} />
             <Route path="/central-inventory/:id" element={<CategoryPage />} />
+            <Route path="/central-finance" element={<CentralFinance />} />
+            <Route path="/track-item-purchase" element={<TrackItemPurchase />} />
+            <Route path="/alumni" element={<AlumniPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

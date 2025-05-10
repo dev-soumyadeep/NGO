@@ -1,7 +1,7 @@
-import { Category,Item } from '@/types'; // Import the Category type
+import { Category,Item,PurchaseHistory } from '@/types'; // Import the Category type
 import axios from 'axios';
-// const API_BASE_URL = `http://localhost:5000/api/inventory`; 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
+const API_BASE_URL = `http://localhost:5000/api/inventory`; 
+// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
 
 export const getCategoryList = async (authToken: string): Promise<Category[]> => {
     try {
@@ -25,7 +25,7 @@ export const getCategoryList = async (authToken: string): Promise<Category[]> =>
 };
 
 export const addInventory = async (
-    category: { name: string; description?: string },
+    category: { id: string; name: string; description?: string },
     authToken: string
   ): Promise<Category> => {
     try {
@@ -45,7 +45,7 @@ export const addInventory = async (
       const result = await response.json(); // Assuming the backend returns { success: true, data: {...} }
       return result.data as Category; // Extract and return the `data` field as a `Category`
     } catch (error) {
-      console.error('Error adding inventory:', error.message);
+      console.error('Error adding inventory:', error);
       throw new Error(error.message || 'Failed to add inventory');
     }
   };
@@ -97,7 +97,7 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
 
 
   export const addItem = async (
-    item: { name: string; description?: string; quantity: number; price: number; category_id: string },
+    item: { id: string; name: string; description?: string; quantity: number; price: number; total_amount: number; category_id: string },
     authToken: string
   ): Promise<Item> => {
     try {
@@ -145,9 +145,9 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
 
   export const updateItemStock = async (
     id: string,
-    updates: { quantity: number; price: number },
+    updates: { quantityChange: number; newprice: number;description?: string },
     authToken: string
-  ): Promise<Item> => {
+  ): Promise<{ data?: Item; message?: string }>=> {
     try {
       const response = await fetch(`${API_BASE_URL}/items/update/${id}`, {
         method: 'PUT',
@@ -161,9 +161,14 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
       if (!response.ok) {
         throw new Error('Failed to update item stock');
       }
-  
+
       const result = await response.json(); // Assuming the backend returns { success: true, data: {...} }
-      return result.data as Item; // Extract and return the `data` field as an `Item`
+      if(result.data){
+        return {data:result.data}
+      }
+      else{
+        return {message:result.message}
+      }
     } catch (error) {
       console.error('Error updating item stock:', error.message);
       throw new Error(error.message || 'Failed to update item stock');
@@ -171,9 +176,29 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
   };
 
 
+  export const deleteItemStock = async(id:string,authToken:string)=>{
+    try {
+      const response = await fetch(`${API_BASE_URL}/items/delete/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`, // Include the token in the Authorization header
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete item stock');
+      }
+      const result = await response.json(); // Assuming the backend returns { success: true, message: '...' }
+      return result.message; // Extract and return the `message` field
+    } catch (error) {
+      console.error('Error deleting item stock:', error.message);
+      throw new Error(error.message || 'Failed to delete item stock');
+    }
+  };
+  
   export const createSchoolItem = async (
     schoolId: string,
     itemId: string,
+    name: string,
     quantity: number,
     price: number
   ) => {
@@ -181,6 +206,7 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
       const response = await axios.post(`${API_BASE_URL}/school-item/add`, {
         schoolId,
         itemId,
+        name,
         quantity,
         price,
       });
@@ -204,13 +230,13 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
   };
 
   export const updateSchoolItemStock = async (
-    id: string,
+    name: string,
     quantity: number,
     price: number
   ) => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/school-item/update/${id}`,
+        `${API_BASE_URL}/school-item/update/${name}`,
         { quantity, price }
       );
       return response.data.data; // returns the updated SchoolItem
@@ -220,3 +246,26 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
       );
     }
   };
+
+
+  
+export interface PurchaseHistoryFilters {
+  startDate?: string;
+  endDate?: string;
+  studentId?: string;
+  itemName?: string;
+  schoolId?: string;
+}
+
+export async function fetchFilteredPurchaseHistory(filters: PurchaseHistoryFilters): Promise<PurchaseHistory[]> {
+  const params: Record<string, string> = {};
+
+  if (filters.startDate) params.startDate = filters.startDate;
+  if (filters.endDate) params.endDate = filters.endDate;
+  if (filters.studentId) params.studentId = filters.studentId;
+  if (filters.itemName) params.itemName = filters.itemName;
+  if (filters.schoolId) params.schoolId = filters.schoolId;
+
+  const response = await axios.get<PurchaseHistory[]>(`${API_BASE_URL}/purchase-history/filter`, { params });
+  return response.data;
+}

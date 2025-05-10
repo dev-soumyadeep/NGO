@@ -59,11 +59,12 @@ const AddSchoolPage: React.FC = () => {
       // Call the createSchool function to add the school to the database
       await createSchool(
         {
+          id:Date.now().toString(),
           name: formData.name,
           location: formData.location,
           contactEmail: formData.contactEmail,
-          contactNumber: formData.contactPhone, // Ensure this is passed
-          numberOfStudents: Number(formData.studentCount) || 0, // Ensure this is passed
+          contactNumber: formData.contactPhone,
+          numberOfStudents: Number(formData.studentCount) || 0,
         },
         state.token || '' // Pass the token from AuthContext
       );
@@ -73,7 +74,6 @@ const AddSchoolPage: React.FC = () => {
         description: 'School added successfully',
       });
 
-      // Navigate to schools page
       navigate('/schools');
     } catch (error) {
       toast({

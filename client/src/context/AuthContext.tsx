@@ -93,9 +93,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { token, admin } = await loginAdmin(email, password);
   
       const user: User = {
-        _id: admin.id,
         email: admin.email,
-        role: 'admin',
+        role: admin.role,
       };
   
       dispatch({

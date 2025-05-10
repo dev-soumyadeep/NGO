@@ -1,23 +1,44 @@
 import { Request, Response } from 'express';
-import { School } from '../models/School';
+import {
+  School,
+  createSchool,
+  getAllSchools,
+  getSchoolById,
+  deleteSchool
+} from '../models/School';
 
+// Add a new school
 export const addSchool = async (req: Request, res: Response) => {
-  const { name, location, contactNumber, contactEmail, numberOfStudents } = req.body;
+  const { id, name, location, contactNumber, contactEmail, numberOfStudents } = req.body;
 
   try {
-    // Optional: check for duplicate school name or email if needed
-    const existing = await School.findOne({ name });
-    if (existing) {
+    if (
+      typeof id !== 'string' ||
+      !name ||
+      !location ||
+      !contactNumber ||
+      !contactEmail ||
+      typeof numberOfStudents !== 'number'
+    ) {
+      return res.status(400).json({ message: 'Missing or invalid fields' });
+    }
+
+    // Check for duplicate school name
+    const existingSchools = await getAllSchools();
+    if (existingSchools.some(s => s.name === name)) {
       return res.status(400).json({ message: 'School already exists' });
     }
 
-    const newSchool = await School.create({
+    const newSchool: School = {
+      id,
       name,
       location,
       contactNumber,
       contactEmail,
       numberOfStudents,
-    });
+    };
+
+    await createSchool(newSchool);
 
     res.status(201).json({
       message: 'School added successfully',
@@ -29,9 +50,10 @@ export const addSchool = async (req: Request, res: Response) => {
   }
 };
 
+// Get all schools
 export const getSchools = async (req: Request, res: Response) => {
   try {
-    const schools = await School.find(); // Fetch all schools from the database
+    const schools = await getAllSchools();
     res.status(200).json({
       message: 'Schools fetched successfully',
       schools,
@@ -42,11 +64,16 @@ export const getSchools = async (req: Request, res: Response) => {
   }
 };
 
-export const getSchoolById = async (req: Request, res: Response) => {
-  const { id } = req.params;
+// Get a school by ID
+export const getSchoolByIdController = async (req: Request, res: Response) => {
+  const id = req.params.id;
 
   try {
-    const school = await School.findById(id); // Fetch school by ID
+    if (!id) {
+      return res.status(400).json({ message: 'Invalid school ID' });
+    }
+
+    const school = await getSchoolById(id);
     if (!school) {
       return res.status(404).json({ message: 'School not found' });
     }
@@ -61,26 +88,47 @@ export const getSchoolById = async (req: Request, res: Response) => {
   }
 };
 
+// Delete a school by ID
+export const deleteSchoolController = async (req: Request, res: Response) => {
+  const id =req.params.id;
 
-export const deleteSchool = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-
-    // Validate school ID
     if (!id) {
-      return res.status(400).json({ success: false, message: 'School ID is required' });
+      return res.status(400).json({ success: false, message: 'Invalid school ID' });
     }
 
-    // Find and delete the school
-    const school = await School.findByIdAndDelete(id);
-
+    const school = await getSchoolById(id);
     if (!school) {
       return res.status(404).json({ success: false, message: 'School not found' });
     }
 
+    await deleteSchool(id);
     return res.status(200).json({ success: true, message: 'School deleted successfully' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting school:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getSchoolNameByIdController = async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  try {
+    if (!id) {
+      return res.status(400).json({ message: 'Invalid school ID' });
+    }
+
+    const school = await getSchoolById(id);
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    // Only return the school name
+    res.status(200).json({
+      schoolName: school.name,
+    });
+  } catch (error) {
+    console.error('Error fetching school name:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

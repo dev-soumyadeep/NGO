@@ -1,17 +1,25 @@
 // src/models/Admin.ts
-import mongoose, { Schema, Document } from 'mongoose';
+import pool from '../config/db';
 
-export interface IAdmin extends Document {
+// TypeScript interface for Admin (only required fields)
+export interface IAdmin {
   email: string;
   password: string;
 }
 
-const AdminSchema = new Schema<IAdmin>(
-  {
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+// Create a new admin
+export async function createAdmin(email: string, password: string): Promise<void> {
+  await pool.execute(
+    'INSERT INTO Admin (email, password) VALUES (?, ?)',
+    [email, password]
+  );
+}
 
-export const Admin = mongoose.model<IAdmin>('Admin', AdminSchema);
+// Find admin by email
+export async function findAdminByEmail(email: string): Promise<IAdmin | null> {
+  const [rows]: any = await pool.execute(
+    'SELECT email, password FROM Admin WHERE email = ? LIMIT 1',
+    [email]
+  );
+  return rows[0] || null;
+}
