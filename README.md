@@ -21,7 +21,7 @@ Add new inventory items with pricing and quantity details.
 ## 🚚 Inventory Distribution
 Send inventory from central store to individual schools.
 
-Record and track deliveries, quantities.
+Record and track sells.
 
 Generate logs of transferred goods for transparency.
 
