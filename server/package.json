@@ -4,13 +4,13 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsup src/index.ts --watch --format esm --onSuccess \"node dist/index.js\"",
     "build": "tsup src/index.ts --format esm",
-    "copy-config": "copyfiles -u 1 server/config/ca.pem dist/config",
-    "postbuild": "npm run copy-config",
-    "start": "node dist/index.js",
-    "test": "jest",
-    "init-db": "ts-node --loader ts-node/esm src/initDB.ts"
+  "copy-config": "mkdir -p dist/config && copyfiles -f server/config/ca.pem dist/config",
+  "postbuild": "npm run copy-config",
+  "start": "node dist/index.js",
+  "dev": "tsup src/index.ts --watch --format esm --onSuccess \"node dist/index.js\"",
+  "test": "jest",
+  "init-db": "ts-node --loader ts-node/esm src/initDB.ts"
   },
   "author": "",
   "license": "ISC",
