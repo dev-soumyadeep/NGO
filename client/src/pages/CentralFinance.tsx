@@ -19,6 +19,14 @@ import {
     DialogTitle,
     DialogFooter,
   } from '@/components/ui/dialog';
+import { FileDown } from 'lucide-react'; 
+import jsPDF from 'jspdf';
+import { UserOptions } from 'jspdf-autotable';
+import { CSVLink } from 'react-csv';
+
+interface jsPDFCustom extends jsPDF {
+  autoTable: (options: UserOptions) => void;
+}
 const CentralFinance: React.FC = () => {
   const { state } = useAuth();
   const navigate = useNavigate();
@@ -112,6 +120,60 @@ const CentralFinance: React.FC = () => {
       setOpenDialog(false);
     }
   };
+
+  const downloadPDF = () => {
+  const doc = new jsPDF() as jsPDFCustom;
+  
+  // Add title
+  doc.setFontSize(16);
+  doc.text('Financial Transactions Report', 14, 15);
+  
+  // Add summary
+  doc.setFontSize(12);
+  doc.text(`Net Balance: ₹${summary.netBalance}`, 14, 25);
+  doc.text(`Total Income: ₹${summary.totalIncome}`, 14, 32);
+  doc.text(`Total Expenses: ₹${summary.totalExpense}`, 14, 39);
+  
+  // Convert transactions to table format
+  const tableData = transactions.map(tx => [
+    formatDateTime(tx.date, 'date'),
+    tx.type,
+    tx.category,
+    tx.schoolName || '-',
+    tx.studentId || '-',
+    tx.itemName || '-',
+    tx.quantity || '-',
+    tx.price || '-',
+    tx.amount,
+    tx.description || '-',
+    formatDateTime(tx.createdAt, 'time')
+  ]);
+
+  // Add table
+
+
+doc.autoTable({
+  head: [['Date', 'Type', 'Category', 'School', 'Student ID', 'Item', 'Qty', 'Price', 'Amount', 'Description', 'Time']],
+  body: tableData,
+  startY: 45,
+});
+
+  doc.save('transactions.pdf');
+};
+
+const csvHeaders = [
+  { label: 'Date', key: 'date' },
+  { label: 'Type', key: 'type' },
+  { label: 'Category', key: 'category' },
+  { label: 'School Name', key: 'schoolName' },
+  { label: 'Student ID', key: 'studentId' },
+  { label: 'Item Name', key: 'itemName' },
+  { label: 'Quantity', key: 'quantity' },
+  { label: 'Price', key: 'price' },
+  { label: 'Amount', key: 'amount' },
+  { label: 'Description', key: 'description' },
+  { label: 'Time', key: 'createdAt' }
+];
 
   // Render transaction table
   const renderTxTable = (txs: Transaction[]) => (
@@ -228,6 +290,27 @@ const CentralFinance: React.FC = () => {
                 <TabsTrigger value="income">Income</TabsTrigger>
                 <TabsTrigger value="expense">Expenses</TabsTrigger>
               </TabsList>
+              <div className="flex justify-end gap-2 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadPDF}
+                className="flex items-center gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export PDF
+              </Button>
+              
+              <CSVLink
+                data={transactions}
+                headers={csvHeaders}
+                filename="transactions.csv"
+                className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <FileDown className="h-4 w-4" />
+                Export CSV
+              </CSVLink>
+            </div>
               <TabsContent value="all">
                 <div className="w-full">{renderTxTable(sortedTransactions)}</div>
               </TabsContent>

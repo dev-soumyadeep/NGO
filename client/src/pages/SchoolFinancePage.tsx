@@ -10,7 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { UserOptions } from 'jspdf-autotable';
+import { CSVLink } from 'react-csv';
+import { FileDown } from 'lucide-react';
 
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: UserOptions) => void;
+}
 const SchoolFinancePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useAuth();
@@ -54,6 +62,56 @@ const SchoolFinancePage: React.FC = () => {
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
+
+  const downloadPDF = () => {
+  const doc = new jsPDF() as jsPDFWithAutoTable;
+  
+  // Add title and school info
+  doc.setFontSize(16);
+  doc.text(`${financial.school.name} - Financial Report`, 14, 15);
+  
+  // Add summary
+  doc.setFontSize(12);
+  doc.text(`School Location: ${financial.school.location}`, 14, 25);
+  doc.text(`Net Balance: ₹${financial.netBalance}`, 14, 32);
+  doc.text(`Total Income: ₹${financial.totalIncome}`, 14, 39);
+  doc.text(`Total Expenses: ₹${financial.totalExpense}`, 14, 46);
+  
+  // Convert transactions to table format
+  const tableData = sortedTransactions.map(tx => [
+    new Date(tx.date).toLocaleDateString(),
+    tx.type,
+    tx.category,
+    tx.studentId || '-',
+    tx.itemName || '-',
+    tx.quantity || '-',
+    tx.price || '-',
+    `₹${tx.amount}`,
+    tx.description || '-',
+    new Date(tx.createdAt).toLocaleTimeString()
+  ]);
+
+  doc.autoTable({
+    head: [['Date', 'Type', 'Category', 'Student ID', 'Item', 'Qty', 'Price', 'Amount', 'Description', 'Time']],
+    body: tableData,
+    startY: 53,
+  });
+
+  doc.save(`${financial.school.name}_transactions.pdf`);
+};
+
+const csvHeaders = [
+  { label: 'Date', key: 'date' },
+  { label: 'Type', key: 'type' },
+  { label: 'Category', key: 'category' },
+  { label: 'Student ID', key: 'studentId' },
+  { label: 'Item Name', key: 'itemName' },
+  { label: 'Quantity', key: 'quantity' },
+  { label: 'Price', key: 'price' },
+  { label: 'Amount', key: 'amount' },
+  { label: 'Description', key: 'description' },
+  { label: 'Time', key: 'createdAt' }
+];
 
   if (loading) {
     return (
@@ -172,6 +230,29 @@ const SchoolFinancePage: React.FC = () => {
           <div className="col-span-1">
             <AddTransactionForm schoolIdInSchoolFinance={financial.school.id} onTransactionAdded={handleRefresh} />
           </div>
+          
+          <div className="flex justify-end gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadPDF}
+            className="flex items-center gap-2"
+          >
+            <FileDown className="h-4 w-4" />
+            Export PDF
+          </Button>
+          
+          <CSVLink
+            data={sortedTransactions}
+            headers={csvHeaders}
+            filename={`${financial.school.name}_transactions.csv`}
+            className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileDown className="h-4 w-4" />
+            Export CSV
+          </CSVLink>
+        </div>
+          
 
           <div className="col-span-1 lg:col-span-2">
             <Tabs defaultValue="all" className="w-full">
