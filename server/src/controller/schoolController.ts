@@ -5,11 +5,11 @@ import {
   getAllSchools,
   getSchoolById,
   deleteSchool
-} from '../models/School';
+} from '../models/School.ts';
 
 // Add a new school
 export const addSchool = async (req: Request, res: Response) => {
-  const { id, name, location, contactNumber, contactEmail, numberOfStudents } = req.body;
+  const { id, name, location, contactNumber, contactEmail} = req.body;
 
   try {
     if (
@@ -17,8 +17,7 @@ export const addSchool = async (req: Request, res: Response) => {
       !name ||
       !location ||
       !contactNumber ||
-      !contactEmail ||
-      typeof numberOfStudents !== 'number'
+      !contactEmail
     ) {
       return res.status(400).json({ message: 'Missing or invalid fields' });
     }
@@ -35,7 +34,7 @@ export const addSchool = async (req: Request, res: Response) => {
       location,
       contactNumber,
       contactEmail,
-      numberOfStudents,
+      numberOfStudents:0,
     };
 
     await createSchool(newSchool);

@@ -18,21 +18,20 @@ const SchoolsPage: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
   const isAdmin = state.isAuthenticated && state.user?.role === 'admin';
-  useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        const data = await getSchools();
-        setSchools(data);
-        setFilteredSchools(data);
-      } catch (error) {
-        console.error('Error fetching schools:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSchools();
-  }, []);
+useEffect(() => {
+  getSchools()
+    .then((fetchedSchools) => {
+      setSchools(fetchedSchools);
+      setFilteredSchools(fetchedSchools); // Use the fetched data directly
+    })
+    .catch(() => {
+      setSchools([]);
+      setFilteredSchools([]); 
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();

@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { School } from '@/types';
-import { MapPin, Mail, Phone, Users, ExternalLink, Trash2 } from 'lucide-react';
+import { MapPin, Mail, Phone, Users, ExternalLink, Trash2, Tag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { deleteSchool } from '@/api/schoolService';
 import { useToast } from '@/hooks/use-toast';
@@ -48,6 +48,10 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
         <CardTitle className="text-xl font-bold">{school.name}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 space-y-3">
+        <div className="flex items-start space-x-2">
+          <Tag className="h-5 w-5 text-gray-500 mt-0.5" />
+          <span className="text-gray-700">{school.id}</span>
+        </div>
         <div className="flex items-start space-x-2">
           <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
           <span className="text-gray-700">{school.location}</span>

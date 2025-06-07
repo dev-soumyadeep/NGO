@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, Plus, LogIn, LogOut, School, Calculator, Box,Package  } from 'lucide-react'; // Import Box icon for inventory
-import { Users } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Plus,
+  LogIn,
+  LogOut,
+  School,
+  Calculator,
+  Box,
+  Package,
+  Users,
+  ChevronDown,
+} from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { state, logout } = useAuth();
@@ -63,27 +81,41 @@ const Navbar: React.FC = () => {
                   <Box className="h-4 w-4 mr-1 text-gray-800" />
                   Central Inventory
                 </Link>
-                <Link
-                  to="/students"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
-                >
-                  <Users className="h-4 w-4 mr-1 text-gray-800" />
-                  Students
-                </Link>
-                <Link
-                  to="/alumni"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
-                >
-                  <Users className="h-4 w-4 mr-1 text-gray-800" />
-                  Alumni
-                </Link>
+
+                {/* People Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center">
+                    <Users className="h-4 w-4 mr-1 text-gray-800" />
+                    People
+                    <ChevronDown className="h-4 w-4 ml-1 text-gray-500" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-40">
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/students"
+                        className="flex items-center text-sm text-gray-700 w-full"
+                      >
+                        Students
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/alumni"
+                        className="flex items-center text-sm text-gray-700 w-full"
+                      >
+                        Alumni
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Link
                   to="/track-item-purchase"
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-brand-indigo hover:bg-gray-50 transition-colors flex items-center"
                 >
                   Track Item Purchase
                 </Link>
-                  
+
                 <Button
                   onClick={() => navigate('/add-school')}
                   className="bg-brand-blue hover:bg-brand-indigo text-white ml-2 flex items-center"

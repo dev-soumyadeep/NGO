@@ -4,15 +4,15 @@ import helmet from 'helmet';
 // import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import https from 'https'; // Import https for pinging the server
-import authRoutes from './routes/authRoutes';
-import schoolRoutes from './routes/schoolRoutes';
-import transactionRoutes from './routes/transactionRoute';
-import studentRoutes from './routes/studentsRoutes';
-import categoryRoutes from './routes/categoryRoutes';
-import itemRoutes from './routes/itemRoutes';
-import schoolItemRoutes from './routes/schoolItemRoutes';
-import purchaseHistoryRoutes from './routes/purchaseHistory';
-import alumniRoutes from './routes/alumniRoutes';
+import authRoutes from './routes/authRoutes.js';
+import schoolRoutes from './routes/schoolRoutes.js';
+import transactionRoutes from './routes/transactionRoute.js';
+import studentRoutes from './routes/studentsRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import itemRoutes from './routes/itemRoutes.js';
+import schoolItemRoutes from './routes/schoolItemRoutes.js';
+import purchaseHistoryRoutes from './routes/purchaseHistory.js';
+import alumniRoutes from './routes/alumniRoutes.js';
 
 dotenv.config();
 

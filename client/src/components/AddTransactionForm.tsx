@@ -6,11 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { addTransaction } from '@/api/financialService';
 import { getSchoolNameById } from '@/api/schoolService';
+import { checkStudentIdExists } from '@/api/studentService';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Transaction } from '@/types';
 import { getIncomeCategories, getExpenseCategories } from '@/api/financialService';
 import { findStudentByStudentId } from '@/api/studentService';
+import { getSchools } from '@/api/schoolService';
+import { set } from 'date-fns';
 interface AddTransactionFormProps {
   schoolIdInSchoolFinance: string | null;
   onTransactionAdded: () => void;
@@ -22,7 +25,8 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
   const [loading, setLoading] = useState(false);
   const [isCentralFinance, setIsCentralFinance] = useState(false);
   const [schoolIdInCentralFinance, setSchoolIdInCentralFinance] = useState('');
-  const [usePriceQuantity, setUsePriceQuantity] = useState(false);
+  const [useItemPriceQuantity, setUseItemPriceQuantity] = useState(false);
+  const [isValidStudent, setIsValidStudent] = useState(true);
   const [formData, setFormData] = useState({
     type: 'income',
     category: '',
@@ -32,8 +36,9 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
     price: '',
     amount: '',
     description: '',
-    studentId:undefined,
+    studentId:'',
   });
+  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
 
   const categories = formData.type === 'income' ? getIncomeCategories() : getExpenseCategories();
 
@@ -44,13 +49,24 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
     }
   }, [schoolIdInSchoolFinance]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => {
+    const newFormData = {
       ...prev,
       [name]: value,
-    }));
-  };
+    };
+
+    // Calculate amount if using price and quantity
+    if (useItemPriceQuantity && (name === 'price' || name === 'quantity')) {
+      const price = Number(name === 'price' ? value : newFormData.price) || 0;
+      const quantity = Number(name === 'quantity' ? value : newFormData.quantity) || 0;
+      newFormData.amount = String(price * quantity);
+    }
+
+    return newFormData;
+  });
+};
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
@@ -59,17 +75,53 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
     }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsePriceQuantity(e.target.checked);
-    // If unchecked, clear price and quantity
-    if (!e.target.checked) {
-      setFormData((prev) => ({
-        ...prev,
-        price: '',
-        quantity: '',
-      }));
-    }
-  };
+    const validateStudentId = async (studentId: string) => {
+      if (!studentId) return;
+    
+      try {
+        const exists = await checkStudentIdExists(studentId, state.token);
+        setIsValidStudent(exists);
+        if(exists){
+          autoFetchSchoolId(studentId)
+        }
+        if (!exists) {
+          toast({
+            title: 'Invalid Student ID',
+            description: 'This student does not exist. Please check the ID.',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Error checking student ID:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to verify student ID.',
+          variant: 'destructive',
+        });
+        setIsValidStudent(false);
+      }
+    };
+
+const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setUseItemPriceQuantity(e.target.checked);
+  // If checked, calculate amount from existing price and quantity
+  // If unchecked, clear price and quantity but keep manual amount
+  if (e.target.checked) {
+    const price = Number(formData.price) || 0;
+    const quantity = Number(formData.quantity) || 0;
+    setFormData((prev) => ({
+      ...prev,
+      amount: String(price * quantity),
+    }));
+  } else {
+    setFormData((prev) => ({
+      ...prev,
+      price: '',
+      quantity: '',
+      // Keep the manual amount when unchecking
+    }));
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +176,8 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
         studentId: formData.studentId,
       };
 
-      if (usePriceQuantity) {
+      if (useItemPriceQuantity) {
+        transaction.itemName = formData.itemName? formData.itemName : undefined;
         transaction.price = formData.price ? Number(formData.price) : undefined;
         transaction.quantity = formData.quantity ? Number(formData.quantity) : undefined;
       }
@@ -148,7 +201,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
         studentId: '',
       });
       setSchoolIdInCentralFinance('');
-      setUsePriceQuantity(false);
+      setUseItemPriceQuantity(false);
       onTransactionAdded();
     } catch (error) {
       toast({
@@ -160,8 +213,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
     setLoading(false);
   };
 
-  const autoFetchSchoolId = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const studentId = e.target.value;
+  const autoFetchSchoolId = async (studentId:string) => {
     if (!studentId) return;
   
     try {
@@ -184,6 +236,10 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
       });
     }
   };
+
+  useEffect(()=>{
+    getSchools().then(setSchools).catch(()=>setSchools([]));
+  },[])
 
   return (
     <Card>
@@ -238,31 +294,32 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
               required
             />
           </div>
-          <div className="grid gap-3">
-            <Label htmlFor="itemName">Item Name (Optional)</Label>
-            <Input
-              id="itemName"
-              name="itemName"
-              type="text"
-              placeholder="Enter item name"
-              value={formData.itemName}
-              onChange={handleChange}
-            />
-          </div>
           {/* Checkbox for using price and quantity */}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="usePriceQuantity"
-              checked={usePriceQuantity}
+              checked={useItemPriceQuantity}
               onChange={handleCheckboxChange}
               className="h-4 w-4"
             />
-            <Label htmlFor="usePriceQuantity">Use price and quantity</Label>
+            <Label htmlFor="usePriceQuantity">Use Item Name, price and quantity</Label>
           </div>
           {/* Show price and quantity fields if checked */}
-          {usePriceQuantity && (
+          {useItemPriceQuantity && (
+            
             <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-3">
+                <Label htmlFor="itemName">Item Name</Label>
+                <Input
+                  id="itemName"
+                  name="itemName"
+                  type="text"
+                  placeholder="Enter item name"
+                  value={formData.itemName}
+                  onChange={handleChange}
+                />
+              </div>
               <div className="grid gap-3">
                 <Label htmlFor="price">Price</Label>
                 <Input
@@ -274,7 +331,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
                   onChange={handleChange}
                   min="0"
                   step="any"
-                  required={usePriceQuantity}
+                  required={useItemPriceQuantity}
                 />
               </div>
               <div className="grid gap-3">
@@ -288,7 +345,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
                   onChange={handleChange}
                   min="0"
                   step="any"
-                  required={usePriceQuantity}
+                  required={useItemPriceQuantity}
                 />
               </div>
             </div>
@@ -303,23 +360,34 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
               value={formData.studentId}
               onChange={(e) => {
                 handleChange(e);
-                autoFetchSchoolId(e);
+                setIsValidStudent(true);
               }}
+              onBlur={(e) => {
+                validateStudentId(e.target.value)
+              }}
+              className={!isValidStudent ? 'border-red-500' : ''}
             />
           </div>
-          {isCentralFinance && (
-            <div className="grid gap-3">
-              <Label htmlFor="schoolId">School ID (Optional)</Label>
-              <Input
-                id="schoolId"
-                name="schoolId"
-                type="text"
-                placeholder="Enter school ID (if applicable)"
-                value={schoolIdInCentralFinance}
-                onChange={(e) => setSchoolIdInCentralFinance(e.target.value)}
-              />
-            </div>
-          )}
+            {isCentralFinance && (
+              <div className="grid gap-3">
+                <Label htmlFor="schoolId">School Name (Optional)</Label>
+                <Select
+                  value={schoolIdInCentralFinance}
+                  onValueChange={(value) => setSchoolIdInCentralFinance(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.id} value={school.id}>
+                        {school.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
           <div className="grid gap-3">
             <Label htmlFor="amount">Amount (₹)</Label>
@@ -331,8 +399,9 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({ schoolIdInSchoo
               value={formData.amount}
               onChange={handleChange}
               min="0"
-              required={!usePriceQuantity}
-              disabled={usePriceQuantity}
+              required={true}
+              readOnly={useItemPriceQuantity}
+              className={useItemPriceQuantity ? 'bg-gray-100' : ''}
             />
           </div>
           <div className="grid gap-3">

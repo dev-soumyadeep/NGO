@@ -7,8 +7,8 @@ import {
   updateTransaction,
   deleteTransaction,
   convertStudentIdToAlumniId
-} from '../models/Transaction';
-import {getSchoolById} from '../models/School';
+} from '../models/Transaction.ts';
+import {getSchoolById} from '../models/School.ts';
 
 
 export class TransactionController {

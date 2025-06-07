@@ -1,6 +1,6 @@
 // src/controllers/adminAuthController.ts
 import { Request, Response } from 'express';
-import { findAdminByEmail,createAdmin,IAdmin } from '../models/Admin';
+import { findAdminByEmail,createAdmin,IAdmin } from '../models/Admin.ts';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -38,6 +38,12 @@ export const loginAdmin = async (req: Request, res: Response) => {
 
 export const addAdmin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+      if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email, password are required' 
+      });
+    }
 
   try {
     // Hash the password before saving

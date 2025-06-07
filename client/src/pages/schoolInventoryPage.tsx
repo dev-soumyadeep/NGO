@@ -219,6 +219,7 @@ const SchoolInventoryPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">Price</label>
                     <Input
                       type="number"
+                      step="0.01"
                       min={schoolItems.find((i) => i.itemId === selectedItemId)?.price || 0}
                       value={sellPrice}
                       onChange={(e) => setSellPrice(e.target.value)}

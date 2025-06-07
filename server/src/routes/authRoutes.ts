@@ -1,6 +1,6 @@
 // src/routes/adminAuth.ts
 import express from 'express';
-import { loginAdmin,addAdmin } from '../controller/adminAuthController';
+import { loginAdmin,addAdmin } from '../controller/adminAuthController.ts';
 
 const router = express.Router();
 

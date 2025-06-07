@@ -1,5 +1,5 @@
 // src/models/Admin.ts
-import pool from '../config/db';
+import pool from '../config/db.ts';
 
 // TypeScript interface for Admin (only required fields)
 export interface IAdmin {

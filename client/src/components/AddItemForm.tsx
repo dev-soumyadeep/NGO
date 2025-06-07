@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Item } from '../types/index';
+import { Item,School } from '../types/index';
 import { getSchools } from '@/api/schoolService';
 
 
@@ -23,18 +23,18 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onAddItem, onUpdateStock, onS
   const [totalAmount, setTotalAmount] = useState(0);
   
   // Send Items states
-  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [selectedSendItemId, setSelectedSendItemId] = useState('');
   const [sendName, setSendName] = useState('');
   const [sendQuantity, setSendQuantity] = useState(0);
   const [sendStatus, setSendStatus] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (tab === 'send') {
-      getSchools().then(setSchools).catch(() => setSchools([]));
-    }
-  }, [tab]);
+useEffect(() => {
+  if (tab === 'send') {
+    getSchools().then(setSchools).catch(() => setSchools([]));
+  }
+}, [tab]);
 
 
 

@@ -20,13 +20,9 @@ export const addItem = async (req: Request, res: Response) => {
     // Check if item already exists by name
     const existingItem = await findItemByName(name);
     if (existingItem) {
-      return res.status(409).json({ success: false, message: 'Item with this name already exists' });
+      return res.status(409).json({ success: false, message: 'Item with this name already exists, Please update the item' });
     }
-
-    // Calculate total_amount if needed (e.g., quantity * price)
     const total_amount = quantity * price;
-
-    // Use the new model function
     const item: IItem = {
       id,
       name,

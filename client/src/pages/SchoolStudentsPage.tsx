@@ -31,6 +31,11 @@ const SchoolStudentsPage: React.FC = () => {
     studentId: string | null;
     studentName: string | null;
   }>({ isOpen: false, studentId: null, studentName: null });
+  const [confirmDeleteDialog, setConfirmDeleteDialog] = useState<{
+    isOpen: boolean;
+    studentId: string | null;
+    studentName: string | null;
+  }>({ isOpen: false, studentId: null, studentName: null });
 
   useEffect(() => {
     if (!state.isAuthenticated) {
@@ -66,10 +71,7 @@ const SchoolStudentsPage: React.FC = () => {
         setFilterOptions([
           'None',
           dobMonthOption, // Present month name
-          ...classes.map((cls) => `Class (${cls})`),
-          `Admission Year (${currentYear})`,
-          `Admission Year (${currentYear - 1})`,
-          `Admission Year (${currentYear - 2})`,
+          ...classes.map((cls) => `Class (${cls})`)
         ]);
 
       } catch (error) {
@@ -119,6 +121,26 @@ const SchoolStudentsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      console.log(state.token)
+      await deleteStudent(studentId, state.token || '');
+      setStudents((prev) => prev.filter((student) => student.id !== studentId));
+      setFilteredStudents((prev) => prev.filter((student) => student.id !== studentId)); // Update filtered list
+      toast({
+        title: 'Success',
+        description: `Student with ID ${studentId} deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete student. Please try again. Check if any transaction is present for this student.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleRemoveStudent = async (studentId: string) => {
     try {
       console.log(state.token)
@@ -144,6 +166,9 @@ const SchoolStudentsPage: React.FC = () => {
   const confirmRemoveStudent = (studentId: string, studentName: string) => {
     setConfirmDialog({ isOpen: true, studentId, studentName });
   };
+  const confirmDeleteStudent = (studentId: string, studentName: string) => {
+    setConfirmDeleteDialog({ isOpen: true, studentId, studentName });
+  };
 
   const handleConfirmDialogClose = (confirmed: boolean) => {
     if (confirmed && confirmDialog.studentId) {
@@ -152,11 +177,17 @@ const SchoolStudentsPage: React.FC = () => {
     setConfirmDialog({ isOpen: false, studentId: null,studentName: null });
   };
 
+  const handleConfirmDeleteDialogClose = (confirmed: boolean) => {
+    if (confirmed && confirmDeleteDialog.studentId) {
+      handleDeleteStudent(confirmDeleteDialog.studentId);
+    }
+    setConfirmDeleteDialog({ isOpen: false, studentId: null,studentName: null });
+  };
+
   const handleFilterChange = (filter: string) => {
     setSelectedFilter(filter);
   
     if (filter === 'None') {
-      console.log('Showing all students'); // Debugging
       setFilteredStudents(students); // Show all students
     } else if (filter.startsWith('DOB Month')) {
       const currentMonth = new Date().getMonth(); // Get current month index (0-11)
@@ -177,18 +208,6 @@ const SchoolStudentsPage: React.FC = () => {
     } else if (filter.startsWith('Class')) {
       const className = filter.match(/\(([^)]+)\)/)?.[1]; // Extract class name
       setFilteredStudents(students.filter((student) => student.class === className));
-    } else if (filter.startsWith('Admission Year')) {
-      const year = filter.match(/\(([^)]+)\)/)?.[1]; // Extract year from filter
-      setFilteredStudents(
-      students.filter((student) => {
-        if (!student.dateOfAdmission) return false;
-
-        // Extract year from `dd/mm/yyyy` format
-        const doa = new Date(student.dateOfAdmission).toISOString().split('T')[0]
-        const admissionYear = doa.split('-')[0]; // Get the year part
-        return admissionYear === year; // Compare with the extracted year
-      })
-    );
     }
   };
 
@@ -238,6 +257,7 @@ const SchoolStudentsPage: React.FC = () => {
                         key={student.id}
                         student={student}
                         onRemove={() =>  confirmRemoveStudent(student.id || '', student.name)}
+                        onDelete={() => confirmDeleteStudent(student.id || '', student.name)}
                       />
                     ))}
                   </ul>
@@ -264,6 +284,31 @@ const SchoolStudentsPage: React.FC = () => {
                     onClick={() => handleConfirmDialogClose(true)}
                   >
                     Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {confirmDeleteDialog.isOpen && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                <h2 className="text-lg font-bold mb-4">Confirm Deletion</h2>
+                <p>
+                  Are you sure you want to delete <strong>{confirmDeleteDialog.studentName}</strong>? This action cannot be undone and will remove this student from the database.
+                  If any transaction regarding this student is present, it will cause Errors. Only use it when no tx is made for this student.  
+                </p>
+                <div className="mt-6 flex justify-end space-x-4">
+                  <button
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+                    onClick={() => handleConfirmDeleteDialogClose(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded"
+                    onClick={() => handleConfirmDeleteDialogClose(true)}
+                  >
+                    Delete
                   </button>
                 </div>
               </div>

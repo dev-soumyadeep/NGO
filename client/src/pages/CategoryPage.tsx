@@ -9,6 +9,7 @@ import { getCategoryById, addItem, getItemsByCategoryId, updateItemStock, create
 import { FiArrowLeft } from 'react-icons/fi';
 import { useToast } from '@/hooks/use-toast';
 import { FiTrash } from 'react-icons/fi';
+import LoginPage from './LoginPage';
 const CategoryPage: React.FC = () => {
   const { state } = useAuth();
   const navigate = useNavigate();
@@ -77,7 +78,11 @@ const CategoryPage: React.FC = () => {
       setItems((prev) => [...prev, addedItem]);
 
     } catch (err) {
-      setError(err.message || 'Failed to add item');
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -178,11 +183,31 @@ const handleDeleteItem = async (itemId: string) => {
 };
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-100 p-8">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-indigo"></div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return <div className="min-h-screen bg-gray-100 p-8 text-red-500">{error}</div>;
+  }
+  function formatDateTime(dateStr?: string | Date) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+   return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
   }
 
   return (
@@ -242,13 +267,13 @@ const handleDeleteItem = async (itemId: string) => {
                     <tbody>
                       {items.map((item) => (
                         <tr key={item.id} className="border-t">
-                          <td className="p-4">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A'}</td>
+                          <td className="p-4">{formatDateTime(item.createdAt)}</td>
                           <td className="p-4">{item.name}</td>
                           <td className="p-4">{item.quantity}</td>
                           <td className="p-4">₹{item.price}</td>
                           <td className="p-4">₹{item.total_amount}</td>
                           <td className="p-4">{item.description}</td>
-                          <td className="p-4">{item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Not updated yet'}</td>
+                          <td className="p-4">{formatDateTime(item.updatedAt)}</td>
                           <td>
                               <button
                                 className="p-2 rounded hover:bg-red-100"

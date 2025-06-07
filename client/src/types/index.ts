@@ -134,4 +134,5 @@ export interface PurchaseHistory {
   studentId: string;
   itemName: string;
   quantity: number;
+  amount: number;
 }

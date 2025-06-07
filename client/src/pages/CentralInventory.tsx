@@ -8,6 +8,7 @@ import { Category } from '@/types'; // Import the updated Category type
 import { addInventory, getCategoryList,removeCategory } from '@/api/inventoryService';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const CentralInventory: React.FC = () => {
   const { state } = useAuth();
@@ -18,7 +19,7 @@ const CentralInventory: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false); // State to handle loading for API calls
   const navigate = useNavigate();
-
+  const { toast } = useToast();
   useEffect(() => {
     console.log(state.token); // Log the token to check if it's available
     if (!state.isAuthenticated) {
@@ -59,7 +60,11 @@ const CentralInventory: React.FC = () => {
       setCategoryName(''); // Clear the input field
       setCategoryDescription(''); // Clear the description field
     } catch (error) {
-      console.error('Error adding category:', error.message);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
     } finally {
       setLoading(false);
     }

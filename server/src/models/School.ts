@@ -1,5 +1,5 @@
 // src/models/School.ts
-import pool from "../config/db";
+import pool from "../config/db.js";
 
 export interface School {
   id: string;
@@ -27,7 +27,17 @@ export async function createSchool(school: School): Promise<void> {
     school.numberOfStudents,
   ]);
 }
-
+export async function updateNumberOfStudent(schoolId: string,action:string): Promise<void> {
+  let operation :string
+  if(action==='add')operation = 'numberOfStudents + 1';
+  else operation = 'numberOfStudents - 1';
+  const sql = `
+    UPDATE School
+    SET numberOfStudents = ${operation}
+    where id=?
+  `;
+  await pool.execute(sql,[schoolId]);
+}
 // Get all schools
 export async function getAllSchools(): Promise<School[]> {
   const [rows] = await pool.query('SELECT * FROM School');

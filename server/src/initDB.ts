@@ -1,5 +1,4 @@
-import pool from './config/db';
-
+import pool from './config/db.ts';
 async function createTables() {
   try {
     // Create Admin table
@@ -137,7 +136,9 @@ async function createTables() {
         schoolId,
         studentId,
         itemName,
-        quantity
+        quantity,
+        price,
+        amount
       FROM Transaction
       WHERE type = 'income' AND itemName IS NOT NULL;
     `);
@@ -151,4 +152,12 @@ async function createTables() {
   }
 }
 
-createTables();
+createTables()
+    .then(() => {
+        console.log('Tables created successfully');
+        process.exit(0);
+    })
+    .catch(error => {
+        console.error('Failed to create tables:', error);
+        process.exit(1);
+    });

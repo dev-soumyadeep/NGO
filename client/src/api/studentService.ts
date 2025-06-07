@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { Student } from '@/types';
 
-const API_BASE_URL = `http://localhost:5000/api/student`;
-const ALUMNI_BASE_URL = `http://localhost:5000/api/alumni`;
-// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/student`;
+// const API_BASE_URL = `http://localhost:5000/api/student`;
+// const ALUMNI_BASE_URL = `http://localhost:5000/api/alumni`;
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/student`;
+const ALUMNI_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/alumni`;
 
 export const getStudentsBySchool = async (schoolId: string, token: string) => {
   const response = await axios.get(`${API_BASE_URL}/${schoolId}`, {
@@ -15,14 +16,17 @@ export const getStudentsBySchool = async (schoolId: string, token: string) => {
 };
 
 export const addStudent = async (schoolId: string, student: Omit<Student, 'id'>, token: string) => {
-  console.log(student)
-  const response = await axios.post(`${API_BASE_URL}/${schoolId}/add`, student, {
-    headers: {
-      Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-    },
-  });
-  console.log(response.data.data)
-  return response.data.data;
+  try{
+    const response = await axios.post(`${API_BASE_URL}/${schoolId}/add`, student, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.data;
+  }catch(error){
+    throw new Error(error.response?.data?.message || 'Failed to add student');
+  }
+
 };
 
 export const getTotalStudents = async (): Promise<number> => {
@@ -63,7 +67,7 @@ export const findStudentByStudentId = async (studentId: string, token?: string) 
     ? { headers: { Authorization: `Bearer ${token}` } }
     : undefined;
   try {
-    const response = await axios.get(`${API_BASE_URL}/${studentId}`, config);
+    const response = await axios.get(`${API_BASE_URL}/get-student/${studentId}`, config);
     return response.data.data || response.data.student || response.data;
   } catch (error) {
     console.error('Error fetching student by studentId:', error);

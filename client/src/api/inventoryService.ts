@@ -1,7 +1,7 @@
 import { Category,Item,PurchaseHistory } from '@/types'; // Import the Category type
 import axios from 'axios';
-const API_BASE_URL = `http://localhost:5000/api/inventory`; 
-// const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
+// const API_BASE_URL = `http://localhost:5000/api/inventory`; 
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_URL}/api/inventory`;  
 
 export const getCategoryList = async (authToken: string): Promise<Category[]> => {
     try {
@@ -38,14 +38,11 @@ export const addInventory = async (
         body: JSON.stringify(category), // Send the category object in the request body
       });
   
-      if (!response.ok) {
-        throw new Error('Failed to add inventory');
+      if (response.ok) {
+        const result = await response.json(); // Assuming the backend returns { success: true, data: {...} }
+        return result.data as Category; // Extract and return the `data` field as a `Category`
       }
-  
-      const result = await response.json(); // Assuming the backend returns { success: true, data: {...} }
-      return result.data as Category; // Extract and return the `data` field as a `Category`
     } catch (error) {
-      console.error('Error adding inventory:', error);
       throw new Error(error.message || 'Failed to add inventory');
     }
   };
@@ -109,15 +106,19 @@ export const getCategoryById = async (id: string, authToken: string): Promise<Ca
         },
         body: JSON.stringify(item), // Send the item object in the request body
       });
-  
-      if (!response.ok) {
-        throw new Error('Failed to add item');
+      const result = await response.json(); 
+      if (response.ok) {
+        if(result.success){ 
+          return result.data as Item; // Extract and return the `data` field as an `Item`
+        }
+        else{
+          throw new Error(result.message);
+        }
       }
-  
-      const result = await response.json(); // Assuming the backend returns { success: true, data: {...} }
-      return result.data as Item; // Extract and return the `data` field as an `Item`
+      else{
+        throw new Error(result.message);
+      }
     } catch (error) {
-      console.error('Error adding item:', error.message);
       throw new Error(error.message || 'Failed to add item');
     }
   };

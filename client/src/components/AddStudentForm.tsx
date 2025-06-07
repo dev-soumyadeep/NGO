@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Student } from '@/types';
-import { uploadImageToCloudinary } from '@/api/uploadImageService'; // Import the Cloudinary upload function
-import { checkStudentIdExists } from '@/api/studentService';
-import { useAuth } from '@/context/AuthContext';
+import { uploadImageToCloudinary } from '@/api/uploadImageService';
+import { useToast } from '@/components/ui/use-toast';
 interface AddStudentFormProps {
   onAddStudent: (student: Omit<Student, 'id'>) => void;
 }
@@ -29,7 +28,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) 
   const [imageFile, setImageFile] = useState<File | null>(null); // State to store the uploaded image file
   const [imagePreview, setImagePreview] = useState<string | null>(null); // State to store the image preview URL
   const [uploading, setUploading] = useState<boolean>(false); // State to track upload status
-  const {state}=useAuth();
+  const {toast}=useToast();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const formattedValue =
@@ -45,30 +44,44 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onAddStudent }) 
 
       // Check file size (max 500KB)
       if (file.size > 500 * 1024) {
-        alert('File size exceeds 500KB. Please upload a smaller image.');
+        toast({
+          title: 'Error',
+          description: 'File size exceeds 500KB. Please upload a smaller image.',
+          variant: 'destructive',
+        });
         return;
       }
 
-      setImageFile(file); // Store the selected file
-      setImagePreview(URL.createObjectURL(file)); // Generate a preview URL
+      setImageFile(file); 
+      setImagePreview(URL.createObjectURL(file)); 
     }
 };
 
 const handleSubmit = async (e: React.FormEvent) => {
+  try{
+
   e.preventDefault();
 
     // Validate required fields
     if (!formData.name || !formData.class || !formData.contact || !formData.dateOfBirth || !formData.dateOfAdmission) {
-      alert('Name, Class, Contact, Date of Birth, and Date of Admission are required fields.');
+      toast({
+        title: 'Error',
+        description: 'Name, Class, Contact, Date of Birth, and Date of Admission are required fields.',
+        variant: 'destructive',
+      });
       return;
     }
     let imageUrl = '';
     if (imageFile) {
       setUploading(true);
       try {
-        imageUrl = await uploadImageToCloudinary(imageFile); // Upload image to Cloudinary
+        imageUrl = await uploadImageToCloudinary(imageFile); 
       } catch (error) {
-        alert('Failed to upload image. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
         setUploading(false);
         return;
       }
@@ -96,7 +109,14 @@ const handleSubmit = async (e: React.FormEvent) => {
     });
     setImageFile(null); // Reset the image file
     setImagePreview(null); // Reset the image preview
-  };
+  }catch(error){
+    toast({
+      title: 'Error',
+      description: error?.message || 'Failed to add student',
+      variant: 'destructive',
+    });
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

@@ -21,7 +21,6 @@ const AddSchoolPage: React.FC = () => {
     location: '',
     contactEmail: '',
     contactPhone: '',
-    studentCount: '',
   });
 
   useEffect(() => {
@@ -64,7 +63,6 @@ const AddSchoolPage: React.FC = () => {
           location: formData.location,
           contactEmail: formData.contactEmail,
           contactNumber: formData.contactPhone,
-          numberOfStudents: Number(formData.studentCount) || 0,
         },
         state.token || '' // Pass the token from AuthContext
       );
@@ -163,20 +161,6 @@ const AddSchoolPage: React.FC = () => {
                     placeholder="+91 9876543210"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="studentCount">Number of Students</Label>
-                  <Input
-                    id="studentCount"
-                    name="studentCount"
-                    type="number"
-                    value={formData.studentCount}
-                    onChange={handleChange}
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-
                 <div className="flex justify-end space-x-4 pt-4">
                   <Button
                     type="button"

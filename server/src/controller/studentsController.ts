@@ -8,8 +8,8 @@ import {
   deleteStudent,
   checkStudentIdExists,
   listStudentsBySchoolId,
-} from '../models/Student';
-
+} from '../models/Student.ts';
+import { updateNumberOfStudent } from '../models/School.ts';
 
 function toMySQLDateFormat(dateStr: string): string {
   // Expects 'DD/MM/YYYY'
@@ -45,12 +45,6 @@ export const addStudent = async (req: Request, res: Response) => {
       imageUrl,
     } = req.body;
 
-    let id = generateStudentId();
-    let response=await checkStudentIdExists(id);
-    while(response){
-      id=generateStudentId();
-      response= await checkStudentIdExists(id);
-    }
     // Validate required fields
     if (!name || !studentClass || !contact || !dateOfBirth || !dateOfAdmission || !schoolId) {
       return res.status(400).json({
@@ -59,6 +53,22 @@ export const addStudent = async (req: Request, res: Response) => {
       });
     }
 
+    
+    let id = generateStudentId();
+    let response=await checkStudentIdExists(id);
+    let limit=99;
+    while(response && limit>0){
+      id=generateStudentId();
+      response= await checkStudentIdExists(id);
+      limit--;
+    }
+    if(limit==0){
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot Admit new Student for Today, Please try again tomorrow',
+      });
+    }
+    await updateNumberOfStudent(schoolId,"add");
     const student: IStudent = {
       id,
       name,
@@ -116,6 +126,7 @@ export const removeStudent = async (req: Request, res: Response) => {
     }
 
     await deleteStudent(studentId);
+    updateNumberOfStudent(student.schoolId,"remove");
     res.status(200).json({ success: true, message: 'Student removed successfully.' });
   } catch (error) {
     console.error('Error removing student:', error);
@@ -198,7 +209,6 @@ export const findStudentByStudentId = async (req: Request, res: Response) => {
     }
     res.status(200).json({ success: true, data: student });
   } catch (error) {
-    console.error('Error finding student:', error);
     res.status(500).json({ success: false, message: 'Internal server error.' });
   }
 };

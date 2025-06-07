@@ -6,9 +6,10 @@ import { updateStudentDetails } from '@/api/studentService';
 interface StudentCardProps {
   student: Student;
   onRemove: () => void;
+  onDelete: () => void;
 }
 
-export const StudentCard: React.FC<StudentCardProps> = ({ student, onRemove }) => {
+export const StudentCard: React.FC<StudentCardProps> = ({ student, onRemove, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student>({ ...student });
@@ -254,15 +255,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onRemove }) =
 
       {/* Buttons */}
       <div className="flex flex-col space-y-2 items-start">
-        <Button
-          variant="destructive"
-          size="sm"
-          className="w-full px-4 py-1.5 text-sm"
-          onClick={onRemove}
-        >
-          Remove & Add to Alumni
-        </Button>
-        {!isEditing && (
+      {!isEditing && (
           <Button
             variant="ghost"
             size="sm"
@@ -272,6 +265,23 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onRemove }) =
             Edit
           </Button>
         )}
+        <Button
+          variant="destructive"
+          size="sm"
+          className="w-full px-4 py-1.5 text-sm"
+          onClick={onDelete}
+        >
+          Delete Student
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="w-full px-4 py-1.5 text-sm"
+          onClick={onRemove}
+        >
+          Remove & Add to Alumni
+        </Button>
+
     </div>
     </li>
   );
