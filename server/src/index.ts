@@ -45,27 +45,27 @@ app.use('/api/inventory/purchase-history', purchaseHistoryRoutes);
 
 
 // Ping server function
-// const pingServer = () => {
-//   const url = process.env.RENDER_SERVER_URL || 'https://ngo-myd7.onrender.com/'; 
-//   https.get(url, (res) => {
-//     if (res.statusCode === 200) {
-//       console.log(`[${new Date().toISOString()}] Server pinged successfully.`);
-//     } else {
-//       console.error(
-//         `[${new Date().toISOString()}] Server ping failed with status code: ${res.statusCode}`
-//       );
-//     }
-//   }).on('error', (error) => {
-//     console.error(`[${new Date().toISOString()}] Error pinging server:`, error.message);
-//   });
-// };
+const pingServer = () => {
+  const url = process.env.RENDER_SERVER_URL || 'https://ngo-myd7.onrender.com/'; 
+  https.get(url, (res) => {
+    if (res.statusCode === 200) {
+      console.log(`[${new Date().toISOString()}] Server pinged successfully.`);
+    } else {
+      console.error(
+        `[${new Date().toISOString()}] Server ping failed with status code: ${res.statusCode}`
+      );
+    }
+  }).on('error', (error) => {
+    console.error(`[${new Date().toISOString()}] Error pinging server:`, error.message);
+  });
+};
 
-// // Start the interval to ping the server every 14 minutes and 58 seconds
-// const INTERVAL = 14 * 60 * 1000 + 58 * 1000; // 14 minutes and 58 seconds in milliseconds
-// setInterval(pingServer, INTERVAL);
+// Start the interval to ping the server every 14 minutes and 58 seconds
+const INTERVAL = 14 * 60 * 1000 + 58 * 1000; // 14 minutes and 58 seconds in milliseconds
+setInterval(pingServer, INTERVAL);
 
-// // Optional: Ping the server immediately when the application starts
-// pingServer();
+// Optional: Ping the server immediately when the application starts
+pingServer();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
