@@ -5,9 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const sslCa = fs.readFileSync(path.resolve(__dirname, process.env.DB_SSL_CA as string));
+const caPath = path.resolve(process.cwd(), 'dist', 'config', 'ca.pem');
+const sslCa = fs.readFileSync(caPath);
 
 const pool: Pool = mysql.createPool({
   host: process.env.DB_HOST,

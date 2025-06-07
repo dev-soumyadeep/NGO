@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "tsup src/index.ts --format esm",
-  "copy-config": "mkdir -p dist/config && copyfiles -f server/config/ca.pem dist/config",
-  "postbuild": "npm run copy-config",
-  "start": "node dist/index.js",
-  "dev": "tsup src/index.ts --watch --format esm --onSuccess \"node dist/index.js\"",
-  "test": "jest",
-  "init-db": "ts-node --loader ts-node/esm src/initDB.ts"
+    "copy-config": "shx mkdir -p dist/config && shx cp src/config/ca.pem dist/config/ca.pem",
+    "postbuild": "npm run copy-config",
+    "start": "node dist/index.js",
+    "dev": "tsup src/index.ts --watch --format esm --onSuccess \"node dist/index.js\"",
+    "test": "jest",
+    "init-db": "ts-node --loader ts-node/esm src/initDB.ts"
   },
   "author": "",
   "license": "ISC",
@@ -34,6 +34,7 @@
     "copyfiles": "^2.4.1",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
+    "shx": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
     "typescript": "^5.3.0"
