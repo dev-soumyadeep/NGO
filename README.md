@@ -1,4 +1,5 @@
-📚 NGO School Management App
+# 📚 NGO School Management App
+
 A powerful and intuitive application designed for NGOs to efficiently manage schools under their wing. This app streamlines operations by allowing the addition and monitoring of schools, students, central inventory, inventory distribution, financial transactions, and donations — all in one place.
 
 🚀 Features
