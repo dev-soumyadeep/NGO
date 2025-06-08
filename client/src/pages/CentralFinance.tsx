@@ -21,12 +21,10 @@ import {
   } from '@/components/ui/dialog';
 import { FileDown } from 'lucide-react'; 
 import jsPDF from 'jspdf';
-import { UserOptions } from 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { CSVLink } from 'react-csv';
 
-interface jsPDFCustom extends jsPDF {
-  autoTable: (options: UserOptions) => void;
-}
+
 const CentralFinance: React.FC = () => {
   const { state } = useAuth();
   const navigate = useNavigate();
@@ -37,7 +35,7 @@ const CentralFinance: React.FC = () => {
     const { toast } = useToast();
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-
+  const date = new Date();
   useEffect(() => {
     if (!state.isAuthenticated) {
       navigate('/login');
@@ -122,7 +120,7 @@ const CentralFinance: React.FC = () => {
   };
 
   const downloadPDF = () => {
-  const doc = new jsPDF() as jsPDFCustom;
+  const doc = new jsPDF();
   
   // Add title
   doc.setFontSize(16);
@@ -130,9 +128,9 @@ const CentralFinance: React.FC = () => {
   
   // Add summary
   doc.setFontSize(12);
-  doc.text(`Net Balance: ₹${summary.netBalance}`, 14, 25);
-  doc.text(`Total Income: ₹${summary.totalIncome}`, 14, 32);
-  doc.text(`Total Expenses: ₹${summary.totalExpense}`, 14, 39);
+  doc.text(`Net Balance: ${summary.netBalance}rs`, 14, 25);
+  doc.text(`Total Income: ${summary.totalIncome}rs`, 14, 32);
+  doc.text(`Total Expenses: ${summary.totalExpense}rs`, 14, 39);
   
   // Convert transactions to table format
   const tableData = transactions.map(tx => [
@@ -152,13 +150,14 @@ const CentralFinance: React.FC = () => {
   // Add table
 
 
-doc.autoTable({
-  head: [['Date', 'Type', 'Category', 'School', 'Student ID', 'Item', 'Qty', 'Price', 'Amount', 'Description', 'Time']],
+autoTable(doc,{
+  head: [['Date', 'Type', 'Category', 'School', 'Student ID', 'Item', 'Qty', 'Price(rs)', 'Amount(rs)', 'Description', 'Time']],
   body: tableData,
   startY: 45,
+  theme: 'grid',
 });
 
-  doc.save('transactions.pdf');
+  doc.save(`transactions_${date}.pdf`);
 };
 
 const csvHeaders = [
@@ -304,7 +303,7 @@ const csvHeaders = [
               <CSVLink
                 data={transactions}
                 headers={csvHeaders}
-                filename="transactions.csv"
+                filename={`transactions_${date}.csv`}
                 className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 <FileDown className="h-4 w-4" />

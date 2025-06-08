@@ -11,13 +11,16 @@ import { ArrowLeft, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { UserOptions } from 'jspdf-autotable';
 import { CSVLink } from 'react-csv';
 import { FileDown } from 'lucide-react';
 
-interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: UserOptions) => void;
+// autoTable(jsPDF,{});
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options) => jsPDF;
+  }
 }
 const SchoolFinancePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +29,7 @@ const SchoolFinancePage: React.FC = () => {
   const [financial, setFinancial] = useState<SchoolFinancial | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+  const date = new Date();
   
   useEffect(() => {
     if (!state.isAuthenticated) {
@@ -63,21 +66,18 @@ const SchoolFinancePage: React.FC = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  const downloadPDF = () => {
-  const doc = new jsPDF() as jsPDFWithAutoTable;
-  
-  // Add title and school info
+const downloadPDF = () => {
+  const doc = new jsPDF();
+
   doc.setFontSize(16);
   doc.text(`${financial.school.name} - Financial Report`, 14, 15);
-  
-  // Add summary
+
   doc.setFontSize(12);
   doc.text(`School Location: ${financial.school.location}`, 14, 25);
-  doc.text(`Net Balance: ₹${financial.netBalance}`, 14, 32);
-  doc.text(`Total Income: ₹${financial.totalIncome}`, 14, 39);
-  doc.text(`Total Expenses: ₹${financial.totalExpense}`, 14, 46);
-  
-  // Convert transactions to table format
+  doc.text(`Net Balance: ${financial.netBalance}rs`, 14, 32);
+  doc.text(`Total Income: ${financial.totalIncome}rs`, 14, 39);
+  doc.text(`Total Expenses: ${financial.totalExpense}rs`, 14, 46);
+
   const tableData = sortedTransactions.map(tx => [
     new Date(tx.date).toLocaleDateString(),
     tx.type,
@@ -86,19 +86,21 @@ const SchoolFinancePage: React.FC = () => {
     tx.itemName || '-',
     tx.quantity || '-',
     tx.price || '-',
-    `₹${tx.amount}`,
+    `${tx.amount}`,
     tx.description || '-',
     new Date(tx.createdAt).toLocaleTimeString()
   ]);
 
-  doc.autoTable({
-    head: [['Date', 'Type', 'Category', 'Student ID', 'Item', 'Qty', 'Price', 'Amount', 'Description', 'Time']],
+  autoTable(doc,{
+    head: [['Date', 'Type', 'Category', 'Student ID', 'Item', 'Qty', 'Price(rs)', 'Amount(rs)', 'Description', 'Time']],
     body: tableData,
     startY: 53,
+    theme: 'grid'
   });
-
-  doc.save(`${financial.school.name}_transactions.pdf`);
+  
+  doc.save(`${financial.school.name}_transactions_${date}.pdf`);
 };
+
 
 const csvHeaders = [
   { label: 'Date', key: 'date' },
@@ -230,62 +232,60 @@ const csvHeaders = [
           <div className="col-span-1">
             <AddTransactionForm schoolIdInSchoolFinance={financial.school.id} onTransactionAdded={handleRefresh} />
           </div>
-          
-          <div className="flex justify-end gap-2 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={downloadPDF}
-            className="flex items-center gap-2"
-          >
-            <FileDown className="h-4 w-4" />
-            Export PDF
-          </Button>
-          
-          <CSVLink
-            data={sortedTransactions}
-            headers={csvHeaders}
-            filename={`${financial.school.name}_transactions.csv`}
-            className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-          >
-            <FileDown className="h-4 w-4" />
-            Export CSV
-          </CSVLink>
-        </div>
-          
+          <div className='col-span-1 lg:col-span-2 flex flex-col gap-4'>
+            <div className='flex justify-end gap-2'>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadPDF}
+                className="flex items-center gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export PDF
+              </Button>
+              
+              <CSVLink
+                data={sortedTransactions}
+                headers={csvHeaders}
+                filename={`${financial.school.name}_transactions_${date}.csv`}
+                className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <FileDown className="h-4 w-4" />
+                Export CSV
+              </CSVLink>
+            </div>
+              
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="all">All Transactions</TabsTrigger>
+                  <TabsTrigger value="income">Income</TabsTrigger>
+                  <TabsTrigger value="expense">Expenses</TabsTrigger>
+                </TabsList>
 
-          <div className="col-span-1 lg:col-span-2">
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="all">All Transactions</TabsTrigger>
-                <TabsTrigger value="income">Income</TabsTrigger>
-                <TabsTrigger value="expense">Expenses</TabsTrigger>
-              </TabsList>
+                <TabsContent value="all">
+                  <TransactionList
+                    transactions={sortedTransactions}
+                    type="all"
+                    title="All Transactions"
+                  />
+                </TabsContent>
 
-              <TabsContent value="all">
-                <TransactionList
-                  transactions={sortedTransactions}
-                  type="all"
-                  title="All Transactions"
-                />
-              </TabsContent>
+                <TabsContent value="income">
+                  <TransactionList
+                    transactions={incomeTransactions}
+                    type="income"
+                    title="Income Transactions"
+                  />
+                </TabsContent>
 
-              <TabsContent value="income">
-                <TransactionList
-                  transactions={incomeTransactions}
-                  type="income"
-                  title="Income Transactions"
-                />
-              </TabsContent>
-
-              <TabsContent value="expense">
-                <TransactionList
-                  transactions={expenseTransactions}
-                  type="expense"
-                  title="Expense Transactions"
-                />
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="expense">
+                  <TransactionList
+                    transactions={expenseTransactions}
+                    type="expense"
+                    title="Expense Transactions"
+                  />
+                </TabsContent>
+              </Tabs>
           </div>
         </div>
       </main>
