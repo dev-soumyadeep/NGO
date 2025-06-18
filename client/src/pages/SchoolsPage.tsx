@@ -67,6 +67,18 @@ const SchoolsPage: React.FC = () => {
     }
   };
 
+  const handleSchoolUpdated = () => {
+    getSchools()
+      .then((fetchedSchools) => {
+        setSchools(fetchedSchools);
+        setFilteredSchools(fetchedSchools);
+      })
+      .catch(() => {
+        setSchools([]);
+        setFilteredSchools([]);
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -131,6 +143,7 @@ const SchoolsPage: React.FC = () => {
                 key={school.id}
                 school={school}
                 onSchoolDeleted={() => handleSchoolDeleted(school.id)} // Pass the callback
+                onSchoolUpdated={handleSchoolUpdated} // Pass the callback
               />
             ))}
           </div>

@@ -33,15 +33,22 @@ import { updateSchool } from "@/api/schoolService";
 interface SchoolCardProps {
   school: School;
   onSchoolDeleted: () => void; // Callback to refresh the school list
+  onSchoolUpdated: () => void;
 }
 
-const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
+const SchoolCard: React.FC<SchoolCardProps> = ({
+  school,
+  onSchoolDeleted,
+  onSchoolUpdated,
+}) => {
   const { state } = useAuth();
   const { toast } = useToast();
   const isAdmin = state.isAuthenticated && state.user?.role === "admin";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedFields, setEditedFields] = useState<Partial<School>>({});
+  const [editedFields, setEditedFields] = useState<Partial<School>>({
+    ...school,
+  });
   const handleDelete = async () => {
     try {
       await deleteSchool(school.id, state.token || "");
@@ -65,7 +72,6 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // school.contactEmail = value;
     setEditedFields((prev) => ({
       ...prev,
       [name]: value,
@@ -81,6 +87,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
           description: "School updated successfully",
         });
         setIsEditing(false);
+        onSchoolUpdated(); // Call the callback if provided
       })
       .catch((error) => {
         console.error("Error updating school:", error);
@@ -115,7 +122,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
             <input
               type="text"
               name="location"
-              value={editedFields.location || school.location}
+              value={editedFields.location}
               className="border border-brand-blue/50 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue"
               onChange={handleChange}
             />
@@ -128,7 +135,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
             <input
               type="email"
               name="contactEmail"
-              value={editedFields.contactEmail || school.contactEmail}
+              value={editedFields.contactEmail}
               className="border border-brand-blue/50 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue"
               onChange={handleChange}
             />
@@ -141,7 +148,7 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
             <input
               type="text"
               name="contactNumber"
-              value={editedFields.contactNumber || school.contactNumber}
+              value={editedFields.contactNumber}
               className="border border-brand-blue/50 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue"
               onChange={handleChange}
             />
@@ -156,9 +163,6 @@ const SchoolCard: React.FC<SchoolCardProps> = ({ school, onSchoolDeleted }) => {
           <div className="flex space-x-2 mt-2">
             <Button size="sm" onClick={handleSave}>
               Save
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              Cancel
             </Button>
           </div>
         </CardContent>
