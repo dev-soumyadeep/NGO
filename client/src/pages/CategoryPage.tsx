@@ -70,12 +70,11 @@ const CategoryPage: React.FC = () => {
     total_amount: number;
     description?: string;
   }) => {
-    if (!id) return; // Ensure category ID is available
+    if (!id) return;
     try {
       setLoading(true);
       setError(null);
-
-      // Call the addItem service
+      console.log(newItem);
       const addedItem = await addItem(
         {
           id: newItem.id,
@@ -88,22 +87,20 @@ const CategoryPage: React.FC = () => {
         },
         state.token
       );
-
       await addTransaction(
         {
-          date: new Date().toISOString(),
+          date: new Date().toISOString().slice(0, 10),
           type: "expense",
           category: "consumables",
           itemName: newItem.name,
-          quantity: newItem.quantity,
-          price: newItem.price,
-          amount: newItem.total_amount,
+          quantity: Number(newItem.quantity),
+          price: Number(newItem.price),
+          amount: Number(newItem.total_amount),
           description: "Item added to Central Inventory",
         },
         state.token
       );
 
-      // Add the new item to the items state
       setItems((prev) => [...prev, addedItem]);
     } catch (err) {
       toast({
