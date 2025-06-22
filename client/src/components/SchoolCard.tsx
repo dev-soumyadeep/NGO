@@ -32,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateSchool } from "@/api/schoolService";
 interface SchoolCardProps {
   school: School;
-  onSchoolDeleted: () => void; // Callback to refresh the school list
+  onSchoolDeleted: () => void;
   onSchoolUpdated: () => void;
 }
 
@@ -76,7 +76,6 @@ const SchoolCard: React.FC<SchoolCardProps> = ({
       ...prev,
       [name]: value,
     }));
-    console.log("Email changed to:", editedFields);
   };
 
   const handleSave = () => {
@@ -84,23 +83,19 @@ const SchoolCard: React.FC<SchoolCardProps> = ({
       .then(() => {
         toast({
           title: "Success",
-          description: "School updated successfully",
+          description: "School details updated successfully",
         });
         setIsEditing(false);
-        onSchoolUpdated(); // Call the callback if provided
+        onSchoolUpdated();
       })
       .catch((error) => {
         console.error("Error updating school:", error);
         toast({
           title: "Error",
-          description: "Failed to update school. Please try again.",
+          description: "Failed to update school details. Please try again.",
           variant: "destructive",
         });
       });
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
   };
 
   return (
