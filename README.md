@@ -2,6 +2,12 @@
 
 A powerful and intuitive application designed for NGOs to efficiently manage schools under their wing. This app streamlines operations by allowing the addition and monitoring of schools, students, central inventory, inventory distribution, financial transactions, and donations — all in one place.
 
+
+### Login Credentials
+username:abc@gmail.com
+
+password:password
+
 🚀 Features
 
 ## 🏫 School & Student Management
@@ -38,6 +44,3 @@ Generate reports on income, expenses, and net financials.
 
 Export data to Excel or PDF for record-keeping and audits.
 
-### Login Credentials
-username:abc@gmail.com
-password:password
