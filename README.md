@@ -37,3 +37,7 @@ Generate reports on income, expenses, and net financials.
 ## 📊 Reporting 
 
 Export data to Excel or PDF for record-keeping and audits.
+
+### Login Credentials
+username:abc@gmail.com
+password:password
