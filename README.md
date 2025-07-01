@@ -8,7 +8,7 @@ username:abc@gmail.com
 
 password:password
 
-🚀 Features
+## 🚀 Features
 
 ## 🏫 School & Student Management
 Add, edit, and delete schools under the NGO's umbrella.
